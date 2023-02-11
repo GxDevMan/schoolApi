@@ -11,7 +11,7 @@ CREATE SCHEMA `schoolDb`;
   `phone_number` bigint NOT NULL,
   `first_name` VARCHAR(200) NOT NULL,
   `last_name` VARCHAR(200) NOT NULL,
-  `password` VARCHAR(1000) NOT NULL,
+  `user_password` VARCHAR(1000) NOT NULL,
   PRIMARY KEY (`email`),
   FOREIGN KEY (`role_id`) REFERENCES `role_table` (`role_id`));
 
@@ -52,6 +52,6 @@ CREATE TABLE `schoolDb`.`reservation_table` (
   FOREIGN KEY (`email`) REFERENCES `user_table` (`email`),
   FOREIGN KEY (`item_code`) REFERENCES `inventory_table` (`item_code`));
 
-Insert into schooldb.role_table (role_id, role_name) values('User');
-Insert into schooldb.role_table (role_id, role_name) values('Admin');
-Insert into schooldb.role_table (role_id, role_name) values('Editor');
+Insert into schooldb.role_table (role_name) values('User');
+Insert into schooldb.role_table (role_name) values('Admin');
+Insert into schooldb.role_table (role_name) values('Editor');

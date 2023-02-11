@@ -1,5 +1,4 @@
 from django.db import models
-
 #db
 class CategoryTable(models.Model):
     category_id = models.AutoField(primary_key=True)
@@ -80,7 +79,7 @@ class UserTable(models.Model):
     phone_number = models.BigIntegerField()
     first_name = models.CharField(max_length=200)
     last_name = models.CharField(max_length=200)
-    password = models.CharField(max_length=1000)
+    user_password = models.CharField(max_length=1000)
 
 
     def __str__(self):

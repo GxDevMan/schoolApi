@@ -1,5 +1,6 @@
 from django.urls import path
 from .views import viewUsers, viewItems, returnListofRoles, roles, CategoryClass
+from .views import testFunction
 from .views import reservationsClass, RoleClass, InventoryClass, HistoryClass, LoginPoint, LogoutPoint
 urlpatterns = [
     path('userList/', viewUsers),
@@ -23,5 +24,7 @@ urlpatterns = [
 
     path('login/', LoginPoint.as_view()),
 
-    path('logout/', LogoutPoint.as_view())
+    path('logout/', LogoutPoint.as_view()),
+
+    path('testing/', testFunction)
 ]

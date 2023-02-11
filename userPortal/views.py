@@ -1,3 +1,6 @@
+from django.contrib.auth import authenticate
+from rest_framework.authentication import SessionAuthentication
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django.db import connections
 from .models import UserTable, InventoryTable, ReservationTable, CategoryTable
@@ -10,7 +13,6 @@ from .serializers import \
     ReservationSerializer, \
     CategorySerializer, \
     HistorySerializer
-
 from rest_framework import generics, status
 from rest_framework import mixins
 
@@ -69,34 +71,34 @@ def viewItems(request):
         serializer = InventoryTableSerializer(items, many=True)
         return Response(serializer.data)
 
+@api_view(['GET'])
+def testFunction(request):
+    if request.method == 'GET':
+        try:
+            print(request.session['email'])
+            print(request.session['role'])
+        except:
+            print("error")
+    return Response(status=status.HTTP_200_OK)
+
+
 #authenticate
 class LoginPoint(APIView):
     def post(self, request, format=None):
-
         email = request.data['email']
         password = request.data['password']
-        queryset = UserTable.objects.filter(email=email).values()
-
-        role = 0
-        dbPass = ""
-
-        for dataIn in queryset:
-            dbPass = dataIn['password']
-            role = dataIn['role_id']
-
-        if password == dbPass:
-            grant = True
-
-        else:
-            return Response({'error': 'Password does not match'})
-
-        if grant:
+        user = authenticate(request, email=email, password=password)
+        if user is not None:
+            response = Response({"message": "Login successful."}, status.HTTP_200_OK)
+            response.set_cookie("sessionid", request.session.session_key, max_age=3)
             request.session['email'] = email
-            request.session['role'] = role
-            return Response({'success': 'Login Successful'})
-
+            return response
         else:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error':'Unauthorized'},status=status.HTTP_401_UNAUTHORIZED)
+
+
+
+
 
 class LogoutPoint(APIView):
     def delete(self, request, format=None):
@@ -104,32 +106,25 @@ class LogoutPoint(APIView):
             request.session.delete()
         except KeyError:
             pass
-        return Response({'success': 'Logout successful'})
+        return Response(status=status.HTTP_200_OK)
 
 
 
 
-#class based (Create, Update, Delete, Auth)
+#class based (Create, Update, Delete)
 class RoleClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixins.RetrieveModelMixin):
     serializer_class = RoleTableSerializer
+    authentication_classes = [SessionAuthentication]
+    permission_classes = [IsAuthenticated]
     queryset = RoleTable.objects.all()
     lookup_field = 'role_id'
 
     def get(self, request, role_id=None):
-        role = -1
-        try:
-            role = request.session['email']
-            role = request.session['role']
-        except:
-            return Response({'message': 'Login First'})
-
-        if role == 3:
-            if role_id:
-                return self.retrieve(request)
-            else:
-                return self.list(request)
+        if role_id:
+            return self.retrieve(request)
         else:
-            return Response({'message': 'Login First'})
+            return self.list(request)
+
 
     def post(self, request):
         return self.create(request)
@@ -140,8 +135,8 @@ class RoleClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.UpdateM
     def delete(self, request, role_id=None):
         return self.destroy(request, role_id)
 
-
 class CategoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixins.RetrieveModelMixin):
+    authentication_classes = [SessionAuthentication]
     serializer_class = CategorySerializer
     queryset = CategoryTable.objects.all()
     lookup_field = 'category_id'
@@ -154,6 +149,7 @@ class CategoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Upd
 
     def post(self, request):
         return self.create(request)
+
 
     def put(self, request, category_id=None):
         return self.update(request, category_id)
