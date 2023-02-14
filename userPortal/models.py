@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.auth.hashers import PBKDF2PasswordHasher
 #db
 class CategoryTable(models.Model):
     category_id = models.AutoField(primary_key=True)
@@ -80,6 +81,10 @@ class UserTable(models.Model):
     first_name = models.CharField(max_length=200)
     last_name = models.CharField(max_length=200)
     user_password = models.CharField(max_length=1000)
+
+    def save(self, *args, **kwargs):
+        self.user_password = PBKDF2PasswordHasher().encode(self.user_password, PBKDF2PasswordHasher().salt())
+        super().save(*args, **kwargs)
 
 
     def __str__(self):

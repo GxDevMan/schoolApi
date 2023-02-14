@@ -91,7 +91,6 @@ class LoginPoint(APIView):
         if user is not None:
             response = Response({"message": "Login successful."}, status.HTTP_200_OK)
             response.set_cookie("sessionid", request.session.session_key, max_age=3)
-            request.session['email'] = email
             return response
         else:
             return Response({'error':'Unauthorized'},status=status.HTTP_401_UNAUTHORIZED)
@@ -107,8 +106,6 @@ class LogoutPoint(APIView):
         except KeyError:
             pass
         return Response(status=status.HTTP_200_OK)
-
-
 
 
 #class based (Create, Update, Delete)
