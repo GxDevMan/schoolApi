@@ -205,7 +205,7 @@ class CategoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Upd
         except:
             return ""
 
-class InventoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixins.RetrieveModelMixin):
+class InventoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixins.RetrieveModelMixin, mixins.ListModelMixin):
     serializer_class = InventoryTableSerializer
     queryset = InventoryTable.objects.all()
     lookup_field = 'item_code'
@@ -247,7 +247,7 @@ class InventoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Up
         except:
             return ""
 
-class HistoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixins.RetrieveModelMixin):
+class HistoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixins.RetrieveModelMixin, mixins.ListModelMixin):
     serializer_class = HistorySerializer
     queryset = HistoryTable.objects.all()
     lookup_field = 'history_id'
@@ -267,7 +267,7 @@ class HistoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Upda
     def delete(self, request, history_id=None):
         return self.destroy(request, history_id)
 
-class reservationsClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixins.RetrieveModelMixin):
+class reservationsClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixins.RetrieveModelMixin, mixins.ListModelMixin):
     serializer_class = ReservationSerializer
     queryset = ReservationTable.objects.all()
     lookup_field = 'reservation_id'
