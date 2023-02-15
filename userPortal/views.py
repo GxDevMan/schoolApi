@@ -119,24 +119,25 @@ class roleClassify():
 
 
 #class based (Create, Update, Delete)
-# class RoleClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixins.RetrieveModelMixin):
-#     serializer_class = RoleTableSerializer
-#     queryset = RoleTable.objects.all()
-#     lookup_field = 'role_id'
-#     roleLookup = roleClassify()
-#
-#     def get(self, request, role_id=None):
-#         strRole = self.roleLookup.roleReturn(request)
-#         if strRole == "Editor" or strRole == "Admin":
-#             if role_id:
-#                 return self.retrieve(request)
-#             else:
-#                 return self.list(request)
-#         else:
-#             return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
-#
-#
-#
+class RoleClass(generics.GenericAPIView, mixins.ListModelMixin):
+    serializer_class = RoleTableSerializer
+    queryset = RoleTable.objects.all()
+    roleLookup = roleClassify()
+
+    def get(self, request):
+        strRole = self.getRole(request)
+        if strRole == "Editor" or strRole == "Admin":
+            return self.list(request)
+        else:
+            return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
+
+    def getRole(self, request):
+        try:
+            lookUpRole = self.roleLookup.roleReturn(request)
+            return lookUpRole
+        except:
+            return ""
+
 #     def post(self, request):
 #         strRole = self.roleLookup.roleReturn(request)
 #         if strRole == "Editor" or strRole == "Admin":
