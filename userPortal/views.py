@@ -85,15 +85,18 @@ def testFunction(request):
 #authenticate
 class LoginPoint(APIView):
     def post(self, request, format=None):
-        email = request.data['email']
-        password = request.data['password']
-        user = authenticate(request, email=email, password=password)
-        if user is not None:
-            response = Response({"message": "Login successful."}, status.HTTP_200_OK)
-            response.set_cookie("sessionid", request.session.session_key, max_age=3)
-            return response
-        else:
-            return Response({'error':'Unauthorized'},status=status.HTTP_401_UNAUTHORIZED)
+        try:
+            email = request.data['email']
+            password = request.data['password']
+            user = authenticate(request, email=email, password=password)
+            if user is not None:
+                response = Response({"message": "Login successful."}, status.HTTP_200_OK)
+                response.set_cookie("sessionid", request.session.session_key, max_age=3)
+                return response
+            else:
+                return Response({'error':'Unauthorized'},status=status.HTTP_401_UNAUTHORIZED)
+        except:
+            return Response({'error':'Insufficient Credentials'}, status=status.HTTP_401_UNAUTHORIZED)
 
 
 
@@ -103,76 +106,133 @@ class LogoutPoint(APIView):
     def delete(self, request, format=None):
         try:
             request.session.delete()
+            return Response(status=status.HTTP_200_OK)
         except KeyError:
-            pass
-        return Response(status=status.HTTP_200_OK)
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+class roleClassify():
+    def roleReturn(self, request):
+        role = request.session['role']
+        selectedRole = RoleTable.objects.get(role_id=role)
+        return selectedRole.role_name
+
 
 
 #class based (Create, Update, Delete)
-class RoleClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixins.RetrieveModelMixin):
-    serializer_class = RoleTableSerializer
-    authentication_classes = [SessionAuthentication]
-    permission_classes = [IsAuthenticated]
-    queryset = RoleTable.objects.all()
-    lookup_field = 'role_id'
+# class RoleClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixins.RetrieveModelMixin):
+#     serializer_class = RoleTableSerializer
+#     queryset = RoleTable.objects.all()
+#     lookup_field = 'role_id'
+#     roleLookup = roleClassify()
+#
+#     def get(self, request, role_id=None):
+#         strRole = self.roleLookup.roleReturn(request)
+#         if strRole == "Editor" or strRole == "Admin":
+#             if role_id:
+#                 return self.retrieve(request)
+#             else:
+#                 return self.list(request)
+#         else:
+#             return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
+#
+#
+#
+#     def post(self, request):
+#         strRole = self.roleLookup.roleReturn(request)
+#         if strRole == "Editor" or strRole == "Admin":
+#             return self.create(request)
+#         else:
+#             return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
+#
+#     def put(self, request, role_id=None):
+#         strRole = self.roleLookup.roleReturn(request)
+#         if strRole == "Editor" or strRole == "Admin":
+#             return self.update(request, role_id)
+#         else:
+#             return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
+#
+#     def delete(self, request, role_id=None):
+#         strRole = self.roleLookup.roleReturn(request)
+#         if strRole == "Editor" or strRole == "Admin":
+#             return self.destroy(request, role_id)
+#         else:
+#             return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
 
-    def get(self, request, role_id=None):
-        if role_id:
-            return self.retrieve(request)
-        else:
-            return self.list(request)
 
-
-    def post(self, request):
-        return self.create(request)
-
-    def put(self, request, role_id=None):
-        return self.update(request, role_id)
-
-    def delete(self, request, role_id=None):
-        return self.destroy(request, role_id)
-
-class CategoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixins.RetrieveModelMixin):
+class CategoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixins.RetrieveModelMixin, mixins.ListModelMixin):
     authentication_classes = [SessionAuthentication]
     serializer_class = CategorySerializer
     queryset = CategoryTable.objects.all()
     lookup_field = 'category_id'
+    roleLookup = roleClassify()
 
     def get(self, request, category_id=None):
-        if category_id:
-            return self.retrieve(request)
+        strRole = self.roleLookup.roleReturn(request)
+        if strRole == "Editor" or strRole == "Admin" or strRole == "User":
+            if category_id:
+                return self.retrieve(request)
+            else:
+                return self.list(request)
         else:
-            return self.list(request)
+            return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
 
     def post(self, request):
-        return self.create(request)
+        strRole = self.roleLookup.roleReturn(request)
+        if strRole == "Editor" or strRole == "Admin":
+            return self.create(request)
+        else:
+            return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
 
 
     def put(self, request, category_id=None):
-        return self.update(request, category_id)
+        strRole = self.roleLookup.roleReturn(request)
+        if strRole == "Editor" or strRole == "Admin":
+            return self.update(request, category_id)
+        else:
+            return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
 
     def delete(self, request, category_id=None):
-        return self.destroy(request, category_id)
+        strRole = self.roleLookup.roleReturn(request)
+        if strRole == "Editor" or strRole == "Admin":
+            return self.destroy(request, category_id)
+        else:
+            return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
 
 class InventoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixins.RetrieveModelMixin):
     serializer_class = InventoryTableSerializer
     queryset = InventoryTable.objects.all()
     lookup_field = 'item_code'
+    roleLookup = roleClassify()
+
 
     def get(self, request, item_code=None):
-        if item_code:
-            return self.retrieve(request)
+        strRole = self.roleLookup.roleReturn(request)
+        if strRole == "Editor" or strRole == "Admin":
+            if item_code:
+                return self.retrieve(request)
+            else:
+                return self.list(request)
         else:
-            return self.list(request)
+            return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
 
     def post(self, request):
-        return self.create(request)
+        strRole = self.roleLookup.roleReturn(request)
+        if strRole == "Editor" or strRole == "Admin":
+            return self.create(request)
+        else:
+            return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
 
     def put(self, request, item_code=None):
-        return self.update(request, item_code)
+        strRole = self.roleLookup.roleReturn(request)
+        if strRole == "Editor" or strRole == "Admin":
+            return self.update(request, item_code)
 
     def delete(self, request, item_code=None):
-        return self.destroy(request, item_code)
+        strRole = self.roleLookup.roleReturn(request)
+        if strRole == "Editor" or strRole == "Admin":
+            return self.destroy(request, item_code)
+        else:
+            return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
 
 class HistoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixins.RetrieveModelMixin):
     serializer_class = HistorySerializer

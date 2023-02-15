@@ -1,7 +1,7 @@
 from django.urls import path
 from .views import viewUsers, viewItems, returnListofRoles, roles, CategoryClass
 from .views import testFunction
-from .views import reservationsClass, RoleClass, InventoryClass, HistoryClass, LoginPoint, LogoutPoint
+from .views import reservationsClass, InventoryClass, HistoryClass, LoginPoint, LogoutPoint
 urlpatterns = [
     path('userList/', viewUsers),
     path('inventoryList/', viewItems),
@@ -9,9 +9,6 @@ urlpatterns = [
 
     path('reservation/<int:reservation_id>', reservationsClass.as_view()),
     path('reservation/', reservationsClass.as_view()),
-
-    path('roles/<int:role_id>', RoleClass.as_view()),
-    path('roles/', RoleClass.as_view()),
 
     path('category/<int:category_id>', CategoryClass.as_view()),
     path('category/', CategoryClass.as_view()),
