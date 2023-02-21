@@ -10,7 +10,7 @@ from .models import UserTable, \
 class UserTableSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserTable
-        fields = ['email','role', 'phone_number', 'first_name', 'last_name']
+        fields = '__all__'
 
 class InventoryTableSerializer(serializers.ModelSerializer):
     class Meta:

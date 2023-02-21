@@ -1,10 +1,8 @@
 from django.urls import path
-from .views import viewUsers, viewItems, returnListofRoles, roles, CategoryClass
+from .views import returnListofRoles, roles, CategoryClass
 from .views import testFunction
-from .views import reservationsClass, InventoryClass, HistoryClass, LoginPoint, LogoutPoint, RoleClass
+from .views import reservationsClass, InventoryClass, HistoryClass, LoginPoint, LogoutPoint, RoleClass, UsersClass
 urlpatterns = [
-    path('userList/', viewUsers),
-    path('inventoryList/', viewItems),
     path('roleList/', roles),
 
     path('reservation/<int:reservation_id>', reservationsClass.as_view()),
@@ -18,11 +16,13 @@ urlpatterns = [
     path('inventory/<int:item_code>', InventoryClass.as_view()),
     path('inventory/', InventoryClass.as_view()),
 
+    path('user/<str:email>', UsersClass.as_view()),
+    path('user/', UsersClass.as_view()),
+
     path('history/<int:history_id>', HistoryClass.as_view()),
     path('history/',HistoryClass.as_view()),
 
     path('login/', LoginPoint.as_view()),
-
     path('logout/', LogoutPoint.as_view()),
 
     path('testing/', testFunction)

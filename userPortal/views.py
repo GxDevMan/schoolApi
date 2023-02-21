@@ -47,28 +47,23 @@ def returnListofRoles(request):
             )
         return Response(data)
 
+@api_view(['GET'])
+def historyReport(request):
+    if request.method == 'GET':
+        getRole = roleClassify()
+        strRole = getRole.roleReturn(request)
+        if strRole == "Admin" or strRole == "Editor":
+            filteredData = HistoryTable.objects.all()
+        else:
+            return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
+
+
 
 @api_view(['GET'])
 def roles(request):
     if request.method == 'GET':
         roles = RoleTable.objects.all()
         serializer = RoleTableSerializer(roles, many=True)
-        return Response(serializer.data)
-
-@api_view(['GET'])
-def viewUsers(request):
-
-    if request.method == 'GET':
-        users = UserTable.objects.all()
-        serializer = UserTableSerializer(users, many=True)
-        return Response(serializer.data)
-
-
-@api_view(['GET'])
-def viewItems(request):
-    if request.method == 'GET':
-        items = InventoryTable.objects.all()
-        serializer = InventoryTableSerializer(items, many=True)
         return Response(serializer.data)
 
 @api_view(['GET'])
@@ -238,6 +233,48 @@ class InventoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Up
         strRole = self.getRole(request)
         if strRole == "Editor" or strRole == "Admin":
             return self.destroy(request, item_code)
+        else:
+            return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
+
+    def getRole(self, request):
+        try:
+            lookUpRole = self.roleLookup.roleReturn(request)
+            return lookUpRole
+        except:
+            return ""
+
+class UsersClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixins.RetrieveModelMixin, mixins.ListModelMixin):
+    serializer_class = UserTableSerializer
+    queryset = UserTable.objects.all()
+    lookup_field = 'email'
+    roleLookup = roleClassify()
+
+    def get(self, request, email=None):
+        strRole = self.getRole(request)
+        if strRole == "Editor" or strRole == "Admin":
+            if email:
+                return self.retrieve(request)
+            else:
+                return self.list(request)
+        else:
+            return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
+
+    def post(self, request):
+        strRole = self.getRole(request)
+        if strRole == "Editor" or strRole == "Admin":
+            return self.create(request)
+        else:
+            return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
+
+    def put(self, request, email=None):
+        strRole = self.getRole(request)
+        if strRole == "Editor" or strRole == "Admin":
+            return self.update(request, email)
+
+    def delete(self, request, email=None):
+        strRole = self.getRole(request)
+        if strRole == "Editor" or strRole == "Admin":
+            return self.destroy(request, email)
         else:
             return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
 
