@@ -26,7 +26,8 @@ class HistoryTable(models.Model):
         db_table = 'history_table'
 
     def __str__(self):
-        return str(self.item_code)
+        formatString = "{item} : {email} : {name} : {datetime}"
+        return formatString.format(item=self.item_code.item_name, email=self.email.email, name=(self.email.first_name + " " + self.email.last_name), datetime=self.date_out)
 
 class InventoryTable(models.Model):
     item_code = models.AutoField(primary_key=True)
@@ -53,10 +54,8 @@ class ReservationTable(models.Model):
     claim = models.IntegerField()
 
     def __str__(self):
-        stringZ = "{email} : {firstName} {lastName}"
-        return stringZ.format(email=self.email.email,
-                              firstName=self.email.first_name,
-                              lastName=self.email.last_name)
+        stringZ = "{item} : {email} : {name} : Expiration - {datetime}"
+        return stringZ.format(item=self.item_code.item_name, email=self.email.email, name=(self.email.first_name + " " + self.email.last_name), datetime=self.date_of_expiration)
 
     class Meta:
         managed = False

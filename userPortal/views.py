@@ -1,6 +1,8 @@
 from django.contrib.auth import authenticate
+from django.http import JsonResponse
 from rest_framework.authentication import SessionAuthentication
-from rest_framework.permissions import IsAuthenticated
+from django.db.models import Q
+from .backends import roleClassify
 from rest_framework.response import Response
 from django.db import connections
 from .models import UserTable, InventoryTable, ReservationTable, CategoryTable
@@ -15,6 +17,8 @@ from .serializers import \
     HistorySerializer
 from rest_framework import generics, status
 from rest_framework import mixins
+import pytz
+import datetime
 
 #function based
 @api_view(['GET'])
@@ -53,9 +57,26 @@ def historyReport(request):
         getRole = roleClassify()
         strRole = getRole.roleReturn(request)
         if strRole == "Admin" or strRole == "Editor":
+
             filteredData = HistoryTable.objects.all()
         else:
             return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
+
+@api_view(['GET'])
+def viewItemsthatCanBeReserved(request):
+    if request.method == 'GET':
+        try:
+            getRole = roleClassify()
+            strRole = getRole.roleReturn(request)
+            today = datetime.datetime.today()
+            query = InventoryTable.objects.filter(
+                ~Q(item_code__in=ReservationTable.objects.filter(date_of_expiration__gte=today).filter(claim=0).values_list('item_code', flat=True)) &
+                ~Q(item_code__in=HistoryTable.objects.filter(date_out__isnull=True).values_list('item_code',flat=True))).filter(status="Available")
+            siftedData = list(query.values())
+            return Response(siftedData)
+        except Exception as e:
+            return Response({'error':'Unauthorized Access'}, status=status.HTTP_401_UNAUTHORIZED)
+    return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
 
@@ -70,10 +91,29 @@ def roles(request):
 def testFunction(request):
     if request.method == 'GET':
         try:
-            print(request.session['email'])
-            print(request.session['role'])
-        except:
-            print("error")
+            print("")
+            # <year>-<month>-<day>-<hour>-<minute>-<second>-<microsecond>
+            # print(request.GET.get('start_date'))
+            # print(request.GET.get('end_date'))
+            #
+            # start_date = datetime.datetime(2021, 1, 20, 20, 8, 7, 127325, tzinfo=pytz.UTC)
+            # end_date = datetime.datetime(2024, 3, 20, 20, 8, 7, 127325, tzinfo=pytz.UTC)
+            #
+            # queryset = HistoryTable.objects.filter(date_out__range=(start_date, end_date)).order_by('-date_out')
+            # data = HistorySerializer(queryset, many=True).data
+            #
+            # print(request.session['email'])
+            # print(request.session['role'])
+            # return Response(data)
+            today = datetime.datetime.today()
+            testQuery = InventoryTable.objects.filter(
+                ~Q(item_code__in=ReservationTable.objects.filter(date_of_expiration__gte=today).filter(claim=0).values_list('item_code', flat=True)) &
+                ~Q(item_code__in=HistoryTable.objects.filter(date_out__isnull=True).values_list('item_code',flat=True))).filter(status="Available")
+            siftedData = list(testQuery.values())
+            return Response(siftedData)
+        except Exception as e:
+            print(e)
+            return Response({'error':'Internal Error'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     return Response(status=status.HTTP_200_OK)
 
 
@@ -85,17 +125,16 @@ class LoginPoint(APIView):
             password = request.data['password']
             user = authenticate(request, email=email, password=password)
             if user is not None:
-                response = Response({"message": "Login successful."}, status.HTTP_200_OK)
+                request.session['email'] = email
+                request.session['role'] = user.role_id
+                response = Response({"message": "Login successful.",
+                                     "role": request.session['role']}, status.HTTP_200_OK)
                 response.set_cookie("sessionid", request.session.session_key, max_age=3)
                 return response
             else:
                 return Response({'error':'Unauthorized'},status=status.HTTP_401_UNAUTHORIZED)
         except:
             return Response({'error':'Insufficient Credentials'}, status=status.HTTP_401_UNAUTHORIZED)
-
-
-
-
 
 class LogoutPoint(APIView):
     def delete(self, request, format=None):
@@ -104,14 +143,6 @@ class LogoutPoint(APIView):
             return Response(status=status.HTTP_200_OK)
         except KeyError:
             return Response(status=status.HTTP_400_BAD_REQUEST)
-
-class roleClassify():
-    def roleReturn(self, request):
-        role = request.session['role']
-        selectedRole = RoleTable.objects.get(role_id=role)
-        return selectedRole.role_name
-
-
 
 #class based (Create, Update, Delete)
 class RoleClass(generics.GenericAPIView, mixins.ListModelMixin):

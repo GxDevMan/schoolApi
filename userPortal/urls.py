@@ -2,6 +2,7 @@ from django.urls import path
 from .views import returnListofRoles, roles, CategoryClass
 from .views import testFunction
 from .views import reservationsClass, InventoryClass, HistoryClass, LoginPoint, LogoutPoint, RoleClass, UsersClass
+from .views import viewItemsthatCanBeReserved
 urlpatterns = [
     path('roleList/', roles),
 
@@ -15,6 +16,8 @@ urlpatterns = [
 
     path('inventory/<int:item_code>', InventoryClass.as_view()),
     path('inventory/', InventoryClass.as_view()),
+
+    path('itemsView/', viewItemsthatCanBeReserved),
 
     path('user/<str:email>', UsersClass.as_view()),
     path('user/', UsersClass.as_view()),
