@@ -15,7 +15,7 @@ class CategoryTable(models.Model):
 class HistoryTable(models.Model):
     history_id = models.AutoField(primary_key=True)
     email = models.ForeignKey('UserTable', models.DO_NOTHING, db_column='email')
-    item_code = models.ForeignKey('InventoryTable', models.DO_NOTHING, db_column='item_code')
+    item_code = models.ForeignKey('InventoryTable', on_delete=models.CASCADE, db_column='item_code')
     date_in = models.DateTimeField()
     date_out = models.DateTimeField(blank=True, null=True)
     due_date = models.DateField()
@@ -31,7 +31,7 @@ class HistoryTable(models.Model):
 
 class InventoryTable(models.Model):
     item_code = models.AutoField(primary_key=True)
-    category = models.ForeignKey(CategoryTable, models.DO_NOTHING)
+    category = models.ForeignKey(CategoryTable, on_delete=models.CASCADE,db_column='category_id')
     item_name = models.CharField(max_length=200)
     item_condition = models.CharField(max_length=100)
     status = models.CharField(max_length=100)
@@ -48,7 +48,7 @@ class InventoryTable(models.Model):
 class ReservationTable(models.Model):
     reservation_id = models.AutoField(primary_key=True)
     email = models.ForeignKey('UserTable', models.DO_NOTHING, db_column='email')
-    item_code = models.ForeignKey(InventoryTable, models.DO_NOTHING, db_column='item_code')
+    item_code = models.ForeignKey(InventoryTable, on_delete=models.CASCADE, db_column='item_code')
     data_of_reservation = models.DateField()
     date_of_expiration = models.DateField()
     claim = models.IntegerField()

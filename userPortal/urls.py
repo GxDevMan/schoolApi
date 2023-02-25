@@ -1,13 +1,14 @@
 from django.urls import path
-from .views import returnListofRoles, roles, CategoryClass
+from .views import CategoryClass
 from .views import testFunction
 from .views import reservationsClass, InventoryClass, HistoryClass, LoginPoint, LogoutPoint, RoleClass, UsersClass
-from .views import viewItemsthatCanBeReserved
+from .views import viewItemsthatCanBeReserved, historyReport, pendingReservation, updatePass
+from .views import logoutAllUsers, clearAllreservations
 urlpatterns = [
-    path('roleList/', roles),
-
     path('reservation/<int:reservation_id>', reservationsClass.as_view()),
     path('reservation/', reservationsClass.as_view()),
+    path('pendingReservations/', pendingReservation),
+    path('clearReservations/', clearAllreservations),
 
     path('roles/', RoleClass.as_view()),
 
@@ -24,9 +25,12 @@ urlpatterns = [
 
     path('history/<int:history_id>', HistoryClass.as_view()),
     path('history/',HistoryClass.as_view()),
+    path('historyReport/', historyReport),
 
     path('login/', LoginPoint.as_view()),
     path('logout/', LogoutPoint.as_view()),
+    path('logoutAllUsers/', logoutAllUsers),
+    path('changePass/', updatePass),
 
     path('testing/', testFunction)
 ]
