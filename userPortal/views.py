@@ -1,14 +1,14 @@
 from django.contrib.auth import authenticate
-from rest_framework.authentication import SessionAuthentication
 from django.contrib.sessions.models import Session
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
+from .backends import sessionCustomAuthentication
 from .backends import roleClassify
 from rest_framework.response import Response
 from django.db import connections
 from .models import UserTable, InventoryTable, ReservationTable, CategoryTable
 from .models import RoleTable, HistoryTable
-from rest_framework.decorators import api_view, APIView
+from rest_framework.decorators import api_view, APIView, permission_classes
 from .serializers import \
     UserTableSerializer, \
     InventoryTableSerializer, \
@@ -16,8 +16,10 @@ from .serializers import \
     ReservationSerializer, \
     CategorySerializer, \
     HistorySerializer, \
-    changePassSerializer, specialInventorySerializer, pendingReservationSerializer, specialHistorySerializer, \
-    multipleItemInsertSerializer, specialHistoryReportSerializer, specialReservationSerializer
+    changePassSerializer,\
+    specialInventorySerializer, pendingReservationSerializer, specialHistorySerializer, \
+    multipleItemInsertSerializer, specialHistoryReportSerializer, specialReservationSerializer, \
+    multipleItemUpdateSerializer, specialInsertReservationSerializer, specialInsertHistorySerializer
 from rest_framework import generics, status
 from rest_framework import mixins
 import datetime
@@ -54,6 +56,7 @@ def returnListofRoles(request):
         return Response(data)
 
 @api_view(['GET'])
+@permission_classes([sessionCustomAuthentication])
 def historyReport(request):
     if request.method == 'GET':
         getRole = roleClassify()
@@ -66,24 +69,20 @@ def historyReport(request):
             return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
 
 @api_view(['GET'])
+@permission_classes([sessionCustomAuthentication])
 def pendingReservation(request):
     if request.method == 'GET':
         try:
-            getRole = roleClassify()
-            strRole = getRole.roleReturn(request)
-
-            if strRole == "Admin" or strRole == "Editor" or strRole =="User":
-                email = request.session['email']
-                today = datetime.datetime.today()
-                filteredData = ReservationTable.objects.filter(email=email).filter(claim=0).filter(date_of_expiration__gte=today).select_related('item_code')
-                serializer = pendingReservationSerializer(filteredData, many=True)
-                return Response(serializer.data)
-            else:
-                return Response({'error':'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
+            email = request.session['email']
+            today = datetime.datetime.today()
+            filteredData = ReservationTable.objects.filter(email=email).filter(claim=0).filter(date_of_expiration__gte=today).select_related('item_code')
+            serializer = pendingReservationSerializer(filteredData, many=True)
+            return Response(serializer.data)
         except:
-            return Response({'error':'Unauthorized','message':'exception type'}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({'message':'exception type'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['DELETE'])
+@permission_classes([sessionCustomAuthentication])
 def clearAllreservations(request):
     if request.method == 'DELETE':
         getRole = roleClassify()
@@ -101,51 +100,47 @@ def clearAllreservations(request):
 
 
 @api_view(['GET'])
+@permission_classes([sessionCustomAuthentication])
 def viewItemsthatCanBeReserved(request):
     if request.method == 'GET':
         try:
             getRole = roleClassify()
-            strRole = getRole.roleReturn(request)
-            if strRole == "Admin" or strRole == "Editor" or strRole == "User":
-                today = datetime.datetime.today()
-                query = InventoryTable.objects.filter(
-                    ~Q(item_code__in=ReservationTable.objects.filter(date_of_expiration__gte=today).filter(claim=0).values_list('item_code', flat=True)) &
-                    ~Q(item_code__in=HistoryTable.objects.filter(date_out__isnull=True).values_list('item_code',flat=True))).filter(status="Available").select_related('category')
-                serializer = specialInventorySerializer(query, many=True)
-                return Response(serializer.data)
-            else:
-                return Response({'error': 'Unauthorized Access'}, status=status.HTTP_401_UNAUTHORIZED)
+            today = datetime.datetime.today()
+            query = InventoryTable.objects.filter(
+                ~Q(item_code__in=ReservationTable.objects.filter(date_of_expiration__gte=today).filter(claim=0).values_list('item_code', flat=True)) &
+                ~Q(item_code__in=HistoryTable.objects.filter(date_out__isnull=True).values_list('item_code',flat=True))).filter(status="Available").select_related('category')
+            serializer = specialInventorySerializer(query, many=True)
+            return Response(serializer.data)
         except:
-            return Response({'error':'Unauthorized Access',
-                             'message':'Exception Occured'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({'message':'Exception Occured'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     return Response(status=status.HTTP_400_BAD_REQUEST)
 
-@api_view(['PUT','GET'])
+@api_view(['PUT'])
+@permission_classes([sessionCustomAuthentication])
 def updatePass(request):
     if request.method == 'PUT':
         try:
             getRole = roleClassify()
             strRole = getRole.roleReturn(request)
-            if strRole == "Editor" or strRole == "Admin" or strRole == "User":
-                sessionemail = request.session['email']
-                #password = request.data['user_password'] new password
-                old_password = request.data['old_password']
+            sessionemail = request.session['email']
+            #password = request.data['user_password'] new password
+            old_password = request.data['old_password']
 
-                new_password = request.data['new_password']
-                new_password2 = request.data['user_password']
+            new_password = request.data['new_password']
+            new_password2 = request.data['user_password']
 
-                if new_password != new_password2:
-                    return Response({'message':'password does not match'}, status=status.HTTP_409_CONFLICT)
+            if new_password != new_password2:
+                return Response({'message':'password does not match'}, status=status.HTTP_409_CONFLICT)
 
-                selectedData = get_object_or_404(UserTable, email=sessionemail)
-                user = authenticate(request, email=sessionemail, password=old_password)
-                if user is not None:
-                    serializer = changePassSerializer(selectedData, request.data)
-                    if serializer.is_valid():
-                        serializer.save()
-                        return Response({'message': 'password successfully changed'})
-                else:
-                    return Response({'error': 'password does not match the old password'}, status=status.HTTP_404_NOT_FOUND)
+            selectedData = get_object_or_404(UserTable, email=sessionemail)
+            user = authenticate(request, email=sessionemail, password=old_password)
+            if user is not None:
+                serializer = changePassSerializer(selectedData, request.data)
+                if serializer.is_valid():
+                    serializer.save()
+                    return Response({'message': 'password successfully changed'})
+            else:
+                return Response({'error': 'password does not match the old password'}, status=status.HTTP_404_NOT_FOUND)
         except:
             return Response({'message': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
 
@@ -186,22 +181,24 @@ def testFunction(request):
 #authenticate
 class LoginPoint(APIView):
     def post(self, request, format=None):
-        try:
             email = request.data['email']
             password = request.data['password']
             user = authenticate(request, email=email, password=password)
             if user is not None:
                 request.session['email'] = email
                 request.session['role'] = user.role_id
+                queryset = RoleTable.objects.filter(role_id=user.role_id)
+                serializer = RoleTableSerializer(queryset, many=True)
+                print(serializer)
+
                 response = Response({"message": "Login successful.",
-                                     "role": request.session['role']}, status.HTTP_200_OK)
+                                     "role": serializer.data[0]['role_name']}, status.HTTP_200_OK)
                 response.set_cookie("sessionid", request.session.session_key, max_age=3)
                 return response
             else:
                 return Response({'error':'Unauthorized'},status=status.HTTP_401_UNAUTHORIZED)
-        except:
-            return Response({'error':'Insufficient Credentials'}, status=status.HTTP_401_UNAUTHORIZED)
 
+@permission_classes([sessionCustomAuthentication])
 class LogoutPoint(APIView):
     def delete(self, request, format=None):
         try:
@@ -211,6 +208,7 @@ class LogoutPoint(APIView):
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['DELETE'])
+@permission_classes([sessionCustomAuthentication])
 def logoutAllUsers(request):
     if request.method == 'DELETE':
         getRole = roleClassify()
@@ -222,8 +220,33 @@ def logoutAllUsers(request):
             return Response({'message':'Unauthorized'},status=status.HTTP_401_UNAUTHORIZED)
 
 
+class countStatus(generics.GenericAPIView):
+    permission_classes = [sessionCustomAuthentication]
+    roleLookup = roleClassify()
+
+    def get(self, request):
+        strRole = self.roleLookup.roleReturn(request)
+        if strRole == "Editor" or strRole == "Admin":
+            working = InventoryTable.objects.filter(item_condition="Working").count()
+            maintenance = InventoryTable.objects.filter(item_condition="Maintenance").count()
+            retired = InventoryTable.objects.filter(item_condition="Retired").count()
+            damaged = InventoryTable.objects.filter(item_condition="Damaged").count()
+            lost = InventoryTable.objects.filter(item_condition="Lost").count()
+
+            data = {'working': working,
+                    'maintenance': maintenance,
+                    'retired': retired,
+                    'damaged': damaged,
+                    'lost': lost}
+            return Response(data)
+
+        else:
+            return Response({'message':'UnAuthorized access'}, status=status.HTTP_403_FORBIDDEN)
+
+
 #class based (Create, Update, Delete)
 class RoleClass(generics.GenericAPIView, mixins.ListModelMixin):
+    permission_classes = [sessionCustomAuthentication]
     serializer_class = RoleTableSerializer
     queryset = RoleTable.objects.all()
     roleLookup = roleClassify()
@@ -243,21 +266,17 @@ class RoleClass(generics.GenericAPIView, mixins.ListModelMixin):
             return ""
 
 class CategoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixins.RetrieveModelMixin, mixins.ListModelMixin):
-    authentication_classes = [SessionAuthentication]
+    permission_classes = [sessionCustomAuthentication]
     serializer_class = CategorySerializer
     queryset = CategoryTable.objects.all()
     lookup_field = 'category_id'
     roleLookup = roleClassify()
 
     def get(self, request, category_id=None):
-        strRole = self.getRole(request)
-        if strRole == "Editor" or strRole == "Admin" or strRole == "User":
-            if category_id:
-                return self.retrieve(request)
-            else:
-                return self.list(request)
+        if category_id:
+            return self.retrieve(request)
         else:
-            return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
+            return self.list(request)
 
     def post(self, request):
         strRole = self.getRole(request)
@@ -289,6 +308,7 @@ class CategoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Upd
             return ""
 
 class InventoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixins.RetrieveModelMixin, mixins.ListModelMixin):
+    permission_classes = [sessionCustomAuthentication]
     queryset = InventoryTable.objects.all()
     lookup_field = 'item_code'
     roleLookup = roleClassify()
@@ -312,8 +332,10 @@ class InventoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Up
         if strRole == "Editor" or strRole == "Admin":
             #note data sent should be in brackets
             serializer = multipleItemInsertSerializer(data=request.data, many=True)
-            serializer.is_valid(raise_exception=True)
-            self.perform_create(serializer)
+            if serializer.is_valid(raise_exception=False):
+                self.perform_create(serializer)
+            else:
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             return Response(serializer.data, status=status.HTTP_200_OK)
         else:
             return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
@@ -322,6 +344,22 @@ class InventoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Up
         strRole = self.getRole(request)
         if strRole == "Editor" or strRole == "Admin":
             return self.update(request, item_code)
+        else:
+            return Response({'message':'Unauthorized'}, status=status.HTTP_200_OK)
+
+    def patch(self, request):
+        strRole = self.getRole(request)
+        if strRole == "Editor" or strRole == "Admin":
+            serializer = multipleItemUpdateSerializer(data=request.data, many=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            else:
+                Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({'message':'Unauthorized'}, status=status.HTTP_200_OK)
+
+
 
     def delete(self, request, item_code=None):
         strRole = self.getRole(request)
@@ -338,6 +376,7 @@ class InventoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Up
             return ""
 
 class UsersClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixins.RetrieveModelMixin, mixins.ListModelMixin):
+    permission_classes = [sessionCustomAuthentication]
     serializer_class = UserTableSerializer
     queryset = UserTable.objects.all()
     lookup_field = 'email'
@@ -383,6 +422,7 @@ class UsersClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Update
             return ""
 
 class HistoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixins.RetrieveModelMixin, mixins.ListModelMixin):
+    permission_classes = [sessionCustomAuthentication]
     serializer_class = HistorySerializer
     queryset = HistoryTable.objects.all()
     roleLookup = roleClassify()
@@ -399,9 +439,9 @@ class HistoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Upda
 
     def post(self, request):
         strRole = self.getRole(request)
-        if strRole == "Editor" or strRole == "Admin" or strRole == "User":
+        if strRole == "Editor" or strRole == "Admin":
             try:
-                serializer = HistorySerializer(data=request.data, many=True)
+                serializer = specialInsertHistorySerializer(data=request.data, many=True)
                 serializer.is_valid(raise_exception=True)
 
                 self.perform_create(serializer)
@@ -437,6 +477,7 @@ class HistoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Upda
             return ""
 
 class reservationsClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixins.RetrieveModelMixin, mixins.ListModelMixin):
+    permission_classes = [sessionCustomAuthentication]
     serializer_class = ReservationSerializer
     queryset = ReservationTable.objects.all()
     roleLookup = roleClassify()
@@ -456,19 +497,12 @@ class reservationsClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins
             return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
 
     def post(self, request):
-        strRole = self.getRole(request)
-        if strRole == "Editor" or strRole == "Admin" or strRole == "User":
-            try:
-                serializer = ReservationSerializer(data=request.data, many=True)
-                serializer.is_valid(raise_exception=True)
+        serializer = specialInsertReservationSerializer(data=request.data, many=True)
+        serializer.is_valid(raise_exception=True)
 
-                self.perform_create(serializer)
-                return Response(serializer.data, status=status.HTTP_200_OK)
-            except Exception as e:
-                return Response({'message':'something went wrong'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        self.perform_create(serializer)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
-        else:
-            return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
 
     def put(self, request, reservation_id=None):
         strRole = self.getRole(request)
@@ -478,26 +512,19 @@ class reservationsClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins
             return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
 
     def delete(self, request, reservation_id=None):
-        strRole = self.getRole(request)
-        if strRole == "Editor" or strRole == "Admin" or strRole == "User":
-            return self.destroy(request, reservation_id)
-        else:
-            return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
+        return self.destroy(request, reservation_id)
 
     def perform_create(self, serializer):
-        today = datetime.datetime.today()
+        today = datetime.date.today()
         item_code = serializer.data[0]['item_code']
-        print(item_code)
         condition1 = InventoryTable.objects.filter(
             ~Q(item_code__in=ReservationTable.objects.filter(date_of_expiration__gte=today).filter(claim=0).values_list(
                 'item_code', flat=True)) & ~Q(item_code__in=HistoryTable.objects.filter(date_out__isnull=True).values_list('item_code', flat=True))).filter(item_code=item_code).filter(status="Available").select_related('category')
         condition2 = InventoryTable.objects.filter(status="Available").filter(item_code=item_code)
-
         if condition1.exists() and condition2.exists():
-            print("hooray")
             serializer.save()
         else:
-            print("FAILED")
+            pass
 
     def getRole(self, request):
         try:

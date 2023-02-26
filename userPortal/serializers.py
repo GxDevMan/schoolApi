@@ -65,6 +65,7 @@ class specialInventorySerializer(serializers.ModelSerializer):
 
 class specialHistorySerializer(serializers.ModelSerializer):
     item_code = ReservationHistoryExtSerializer()
+    email = HistoryReportExtUserTable()
     class Meta:
         model = HistoryTable
         fields = '__all__'
@@ -74,6 +75,16 @@ class specialReservationSerializer(serializers.ModelSerializer):
     class Meta:
         model = ReservationTable
         fields = '__all__'
+
+class specialInsertReservationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ReservationTable
+        fields = ['email','item_code','claim']
+
+class specialInsertHistorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = HistoryTable
+        fields = ['email','item_code','due_date','notes']
 
 
 class specialHistoryReportSerializer(serializers.ModelSerializer):
@@ -87,6 +98,11 @@ class multipleItemInsertSerializer(serializers.ModelSerializer):
     class Meta:
         model = InventoryTable
         fields = ['category','item_name','item_condition','status']
+
+class multipleItemUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = InventoryTable
+        fields = ['item_code','category','item_name','item_condition','status']
 
 class pendingReservationSerializer(serializers.ModelSerializer):
     item_code = pendingExtReservation()

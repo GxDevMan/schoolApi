@@ -1,3 +1,7 @@
+import datetime
+from datetime import date
+from django.utils import timezone
+
 from django.db import models
 from django.contrib.auth.hashers import PBKDF2PasswordHasher
 #db
@@ -25,9 +29,21 @@ class HistoryTable(models.Model):
         managed = False
         db_table = 'history_table'
 
+    def save(self, *args, **kwargs):
+        if not self.history_id:
+            today = timezone.now()
+
+            self.date_in = today
+            super().save(*args, **kwargs)
+        else:
+            super().save(*args, **kwargs)
+
+
     def __str__(self):
         formatString = "{item} : {email} : {name} : {datetime}"
         return formatString.format(item=self.item_code.item_name, email=self.email.email, name=(self.email.first_name + " " + self.email.last_name), datetime=self.date_out)
+
+
 
 class InventoryTable(models.Model):
     item_code = models.AutoField(primary_key=True)
@@ -53,6 +69,17 @@ class ReservationTable(models.Model):
     date_of_expiration = models.DateField()
     claim = models.IntegerField()
 
+    def save(self,  *args, **kwargs):
+        if not self.reservation_id:
+            today = date.today()
+            today_str = today.strftime('%Y-%m-%d')
+
+            self.data_of_reservation = today_str
+            self.date_of_expiration = today_str
+            super().save(*args, **kwargs)
+        else:
+            super().save(*args, **kwargs)
+
     def __str__(self):
         stringZ = "{item} : {email} : {name} : Expiration - {datetime}"
         return stringZ.format(item=self.item_code.item_name, email=self.email.email, name=(self.email.first_name + " " + self.email.last_name), datetime=self.date_of_expiration)
@@ -66,7 +93,7 @@ class RoleTable(models.Model):
     role_name = models.CharField(max_length=200)
 
     def __str__(self):
-        return self.role_name;
+        return self.role_name
 
     class Meta:
         managed = False
