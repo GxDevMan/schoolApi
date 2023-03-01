@@ -189,7 +189,6 @@ class LoginPoint(APIView):
                 request.session['role'] = user.role_id
                 queryset = RoleTable.objects.filter(role_id=user.role_id)
                 serializer = RoleTableSerializer(queryset, many=True)
-                print(serializer)
 
                 response = Response({"message": "Login successful.",
                                      "role": serializer.data[0]['role_name']}, status.HTTP_200_OK)
