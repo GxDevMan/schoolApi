@@ -1,10 +1,14 @@
 SELECT * FROM schooldb.user_table;
 
 SELECT inventory_table.item_code ,inventory_table.item_name FROM inventory_table
-WHERE EXISTS(
+WHERE NOT EXISTS(
 SELECT inventory_table.item_code ,inventory_table.item_name FROM inventory_table 
 JOIN reservation_table ON reservation_table.item_code = inventory_table.item_code
-WHERE reservation_table.date_of_expiration > CURDATE());
+WHERE reservation_table.date_of_expiration > CURDATE() AND reservation_table.claim=False)
+AND NOT EXISTS(
+SELECT inventory_table.item_code ,inventory_table.item_name FROM inventory_table 
+JOIN history_table ON history_table.item_code = inventory_table.item_code
+WHERE history_table.date_out is NUll) AND inventory_table.status='Available';
 
 SELECT inventory_table.item_code ,inventory_table.item_name FROM inventory_table 
 LEFT JOIN reservation_table ON reservation_table.item_code = inventory_table.item_code
