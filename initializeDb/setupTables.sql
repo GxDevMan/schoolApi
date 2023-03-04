@@ -1,4 +1,3 @@
-CREATE SCHEMA `schoolDb`;
 
   CREATE TABLE `schoolDb`.`role_table` (
   `role_id` INT NOT NULL AUTO_INCREMENT,
@@ -52,6 +51,6 @@ CREATE TABLE `schoolDb`.`reservation_table` (
   FOREIGN KEY (`email`) REFERENCES `user_table` (`email`),
   FOREIGN KEY (`item_code`) REFERENCES `inventory_table` (`item_code`));
 
-Insert into schooldb.role_table (role_name) values('User');
-Insert into schooldb.role_table (role_name) values('Admin');
-Insert into schooldb.role_table (role_name) values('Editor');
+Insert into schoolDb.role_table (role_name) values('User');
+Insert into schoolDb.role_table (role_name) values('Admin');
+Insert into schoolDb.role_table (role_name) values('Editor');

@@ -32,6 +32,7 @@ ALLOWED_HOSTS = []
 INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
+    'userPortal.management.commands',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -60,6 +61,7 @@ SESSION_COOKIE_AGE = 10800
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 AUTHENTICATION_BACKENDS = ['userPortal.backends.userAuth', 'django.contrib.auth.backends.ModelBackend']
 CORS_ORIGIN_ALLOW_ALL = True
+TIMEOUT = 120
 
 TEMPLATES = [
     {
@@ -90,8 +92,8 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'schoolDb',
         'USER': 'root',
-        'PASSWORD': 'S1Em$e*r#23',
-        'HOST': 'localhost',
+        'PASSWORD': 'pass',
+        'HOST': 'db',
         'PORT': '3306',
         'OPTIONS': {'charset': 'utf8mb4'},
     }
