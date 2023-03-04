@@ -181,6 +181,7 @@ def testFunction(request):
 #authenticate
 class LoginPoint(APIView):
     def post(self, request, format=None):
+        try:
             email = request.data['email']
             password = request.data['password']
             user = authenticate(request, email=email, password=password)
@@ -196,6 +197,9 @@ class LoginPoint(APIView):
                 return response
             else:
                 return Response({'error':'Unauthorized'},status=status.HTTP_401_UNAUTHORIZED)
+        except:
+            print("PIPE??")
+
 
 @permission_classes([sessionCustomAuthentication])
 class LogoutPoint(APIView):
