@@ -9,7 +9,10 @@ https://docs.djangoproject.com/en/4.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.1/ref/settings/
 """
+import os
 from pathlib import Path
+from dotenv import load_dotenv
+load_dotenv()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 
 
@@ -20,7 +23,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-sn4iw*_)arhge3s&a_4s&7fzjbeof3lu&#r!2ug*x*32x8*fk_'
+SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -60,8 +63,10 @@ ROOT_URLCONF = 'schoolApi.urls'
 SESSION_COOKIE_AGE = 10800
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 AUTHENTICATION_BACKENDS = ['userPortal.backends.userAuth', 'django.contrib.auth.backends.ModelBackend']
+
+#Will be set to whitelist once a domain is set
 CORS_ORIGIN_ALLOW_ALL = True
-TIMEOUT = 120
+TIMEOUT = 3
 
 TEMPLATES = [
     {
@@ -90,11 +95,11 @@ DATABASES = {
             'charset':'utf8mb4'
         },
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'schoolDb',
-        'USER': 'root',
-        'PASSWORD': 'pass',
-        'HOST': 'db',
-        'PORT': '3306',
+        'NAME': os.getenv('DB_SCHEMA'),
+        'USER': os.getenv('DB_USER'),
+        'PASSWORD': os.getenv('DB_PASSWORD'),
+        'HOST': os.getenv('DB_HOST'),
+        'PORT': os.getenv('DB_PORT'),
         'OPTIONS': {'charset': 'utf8mb4'},
     }
 }

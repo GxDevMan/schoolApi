@@ -1,3 +1,4 @@
+import os
 from django.contrib.auth import authenticate
 from django.contrib.sessions.models import Session
 from django.shortcuts import get_object_or_404
@@ -149,7 +150,7 @@ def testFunction(request):
     if request.method == 'GET':
 
         try:
-            print("")
+            pass
             # <year>-<month>-<day>-<hour>-<minute>-<second>-<microsecond>
             # print(request.GET.get('start_date'))
             # print(request.GET.get('end_date'))
@@ -163,14 +164,13 @@ def testFunction(request):
             # print(request.session['email'])
             # print(request.session['role'])
             # return Response(data)
-
-            today = datetime.datetime.today()
-            testQuery = InventoryTable.objects.filter(
-                ~Q(item_code__in=ReservationTable.objects.filter(date_of_expiration__gte=today).filter(
-                    claim=0).values_list('item_code', flat=True)) & ~Q(item_code__in=HistoryTable.objects.filter(date_out__isnull=True).values_list('item_code', flat=True))).filter(status="Available").select_related('category')
-            siftedData = list(
-                testQuery.values('item_code', 'item_name', 'item_condition', 'status', 'category__category_name'))
-            return Response(siftedData)
+            # today = datetime.datetime.today()
+            # testQuery = InventoryTable.objects.filter(
+            #     ~Q(item_code__in=ReservationTable.objects.filter(date_of_expiration__gte=today).filter(
+            #         claim=0).values_list('item_code', flat=True)) & ~Q(item_code__in=HistoryTable.objects.filter(date_out__isnull=True).values_list('item_code', flat=True))).filter(status="Available").select_related('category')
+            # siftedData = list(
+            #     testQuery.values('item_code', 'item_name', 'item_condition', 'status', 'category__category_name'))
+            # return Response(siftedData)
 
         except Exception as e:
             print(e)
@@ -181,24 +181,22 @@ def testFunction(request):
 #authenticate
 class LoginPoint(APIView):
     def post(self, request, format=None):
-        try:
-            email = request.data['email']
-            password = request.data['password']
-            user = authenticate(request, email=email, password=password)
-            if user is not None:
-                request.session['email'] = email
-                request.session['role'] = user.role_id
-                queryset = RoleTable.objects.filter(role_id=user.role_id)
-                serializer = RoleTableSerializer(queryset, many=True)
+        email = request.data['email']
+        password = request.data['password']
+        user = authenticate(request, email=email, password=password)
+        if user is not None:
+            request.session['email'] = email
+            request.session['role'] = user.role_id
+            queryset = RoleTable.objects.filter(role_id=user.role_id)
+            serializer = RoleTableSerializer(queryset, many=True)
 
-                response = Response({"message": "Login successful.",
-                                     "role": serializer.data[0]['role_name']}, status.HTTP_200_OK)
-                response.set_cookie("sessionid", request.session.session_key, max_age=3)
-                return response
-            else:
-                return Response({'error':'Unauthorized'},status=status.HTTP_401_UNAUTHORIZED)
-        except:
-            print("PIPE??")
+            response = Response({"message": "Login successful.",
+                                 "role": serializer.data[0]['role_name']}, status.HTTP_200_OK)
+            response.set_cookie("sessionid", request.session.session_key, max_age=3)
+            return response
+        else:
+            return Response({'error':'Unauthorized'},status=status.HTTP_401_UNAUTHORIZED)
+
 
 
 @permission_classes([sessionCustomAuthentication])

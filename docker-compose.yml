@@ -4,7 +4,7 @@ services:
     image: mysql:8
     environment:
       MYSQL_ROOT_PASSWORD: pass
-      MYSQL_DATABASE: schoolDb
+      MYSQL_DATABASE: schooldb
     volumes:
       - ./initializeDb/setupTables.sql:/docker-entrypoint-initdb.d/setupTables.sql
     ports:
@@ -13,7 +13,7 @@ services:
 
   web:
     build: .
-    command: bash -c "python manage.py database_check && python manage.py migrate && python manage.py init_superuser && python manage.py runserver 0.0.0.0:8000"
+    command: bash -c "python manage.py initialization && python manage.py runserver 0.0.0.0:8000"
     volumes:
       - .:/schoolApi
     ports:
