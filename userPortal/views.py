@@ -309,7 +309,7 @@ class CategoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Upd
             return ""
 
 class InventoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixins.RetrieveModelMixin, mixins.ListModelMixin):
-    permission_classes = [sessionCustomAuthentication]
+    #permission_classes = [sessionCustomAuthentication]
     queryset = InventoryTable.objects.all()
     lookup_field = 'item_code'
     roleLookup = roleClassify()
