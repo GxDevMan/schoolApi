@@ -13,7 +13,7 @@ class roleClassify():
 class sessionCustomAuthentication(IsAuthenticated):
     def has_permission(self, request, view):
         try:
-            email = request.session['email']
+            #email = request.session['email']
             return True
         except:
             return False
