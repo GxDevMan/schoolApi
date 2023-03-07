@@ -64,6 +64,7 @@ ROOT_URLCONF = 'schoolApi.urls'
 SESSION_COOKIE_AGE = 10800
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 AUTHENTICATION_BACKENDS = ['userPortal.backends.userAuth', 'django.contrib.auth.backends.ModelBackend']
+CORS_ALLOW_HEADERS = ['sessionid', 'content-type']
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [

@@ -11,7 +11,6 @@ class roleClassify():
         sessionHeader = request.META.get('HTTP_SESSIONID')
         session = SessionStore(session_key=sessionHeader)
         role = session['role']
-        print("Hello")
         selectedRole = RoleTable.objects.get(role_id=role)
         return selectedRole.role_name
 
@@ -19,10 +18,8 @@ class sessionCustomAuthentication(IsAuthenticated):
     def has_permission(self, request, view):
         try:
             sessionHeader = request.META.get('HTTP_SESSIONID')
-            print(sessionHeader)
             session = SessionStore(session_key=sessionHeader)
             email = session['email']
-            print(email)
             return True
         except:
             print("failed")
@@ -68,8 +65,7 @@ class CorsMiddleware:
         # Set the Access-Control-Allow-Origin header to the domain of the incoming request
         origin = request.headers.get('Origin')
         response['Access-Control-Allow-Origin'] = origin
-        response['Access-Control-Allow-Headers'] = 'sessionid'
-        response['Access-Control-Allow-Headers'] = 'Content-Type'
+        response['Access-Control-Allow-Headers'] = 'sessionid, content-type'
 
         # Allow credentials to be sent with the request
         response['Access-Control-Allow-Credentials'] = 'true'
