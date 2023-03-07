@@ -1,9 +1,10 @@
 import os
 from django.contrib.auth import authenticate
+from django.contrib.sessions.backends.db import SessionStore
 from django.contrib.sessions.models import Session
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
-from .backends import sessionCustomAuthentication
+from .backends import sessionCustomAuthentication, sessionCustomAuthenticationTesting
 from .backends import roleClassify
 from rest_framework.response import Response
 from django.db import connections
@@ -185,14 +186,19 @@ class LoginPoint(APIView):
         password = request.data['password']
         user = authenticate(request, email=email, password=password)
         if user is not None:
-            request.session['email'] = email
-            request.session['role'] = user.role_id
+            session = SessionStore()
+
+            session['email'] = email
+            session['role'] = user.role_id
+            session.create()
+
             queryset = RoleTable.objects.filter(role_id=user.role_id)
             serializer = RoleTableSerializer(queryset, many=True)
 
             response = Response({"message": "Login successful.",
-                                 "role": serializer.data[0]['role_name']}, status.HTTP_200_OK)
-            response.set_cookie("sessionid", request.session.session_key, max_age=3)
+                                 "role": serializer.data[0]['role_name'],
+                                 "sessionid": session.session_key}, status.HTTP_200_OK)
+            response.set_cookie('sessionid', session.session_key, httponly=True)
             return response
         else:
             return Response({'error':'Unauthorized'},status=status.HTTP_401_UNAUTHORIZED)
@@ -268,6 +274,7 @@ class RoleClass(generics.GenericAPIView, mixins.ListModelMixin):
 
 class CategoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixins.RetrieveModelMixin, mixins.ListModelMixin):
     permission_classes = [sessionCustomAuthentication]
+
     serializer_class = CategorySerializer
     queryset = CategoryTable.objects.all()
     lookup_field = 'category_id'
@@ -322,13 +329,10 @@ class InventoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Up
                 queryset = self.get_queryset().filter(item_code=item_code)
                 serializer = specialInventorySerializer(queryset, many=True)
                 response = Response(serializer.data)
-                response["Access-Control-Allow-Origin"] = "*"
-
                 return response
             else:
                 serializer = specialInventorySerializer(self.get_queryset(), many=True)
                 response = Response(serializer.data)
-                response["Access-Control-Allow-Origin"] = "*"
                 return response
         else:
             return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)

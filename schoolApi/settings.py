@@ -49,6 +49,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'userPortal.backends.CorsMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -63,6 +64,13 @@ ROOT_URLCONF = 'schoolApi.urls'
 SESSION_COOKIE_AGE = 10800
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 AUTHENTICATION_BACKENDS = ['userPortal.backends.userAuth', 'django.contrib.auth.backends.ModelBackend']
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+        # ... other authentication classes ...
+    ],
+}
 
 #Will be set to whitelist once a domain is set
 CORS_ORIGIN_ALLOW_ALL = True
