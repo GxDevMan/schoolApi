@@ -316,17 +316,17 @@ class InventoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Up
     serializer_class = InventoryTableSerializer
 
     def get(self, request, item_code=None):
-        strRole = self.getRole(request)
-        if strRole == "Editor" or strRole == "Admin":
-            if item_code:
-                queryset = self.get_queryset().filter(item_code=item_code)
-                serializer = specialInventorySerializer(queryset, many=True)
-                return Response(serializer.data)
-            else:
-                serializer = specialInventorySerializer(self.get_queryset(), many=True)
-                return Response(serializer.data)
+        # strRole = self.getRole(request)
+        # if strRole == "Editor" or strRole == "Admin":
+        if item_code:
+            queryset = self.get_queryset().filter(item_code=item_code)
+            serializer = specialInventorySerializer(queryset, many=True)
+            return Response(serializer.data)
         else:
-            return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
+            serializer = specialInventorySerializer(self.get_queryset(), many=True)
+            return Response(serializer.data)
+        # else:
+        #     return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
 
     def post(self, request):
         strRole = self.getRole(request)
