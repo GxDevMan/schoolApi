@@ -321,10 +321,15 @@ class InventoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Up
             if item_code:
                 queryset = self.get_queryset().filter(item_code=item_code)
                 serializer = specialInventorySerializer(queryset, many=True)
-                return Response(serializer.data)
+                response = Response(serializer.data)
+                response["Access-Control-Allow-Origin"] = "*"
+
+                return response
             else:
                 serializer = specialInventorySerializer(self.get_queryset(), many=True)
-                return Response(serializer.data)
+                response = Response(serializer.data)
+                response["Access-Control-Allow-Origin"] = "*"
+                return response
         else:
             return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
 
