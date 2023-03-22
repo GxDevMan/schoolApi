@@ -19,7 +19,7 @@ from .serializers import \
     changePassSerializer,\
     specialInventorySerializer, pendingReservationSerializer, specialHistorySerializer, \
     multipleItemInsertSerializer, specialHistoryReportSerializer, specialReservationSerializer, \
-    multipleItemUpdateSerializer, specialInsertReservationSerializer, specialInsertHistorySerializer
+    multipleItemUpdateSerializer, specialInsertReservationSerializer, specialInsertHistorySerializer, textPeopleFindSerializer
 from rest_framework import generics, status
 from rest_framework import mixins
 from .backends import convertDate
@@ -178,6 +178,19 @@ def testFunction(request):
             return Response({'error':'Internal Error'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     return Response(status=status.HTTP_200_OK)
 
+@permission_classes([sessionCustomAuthentication])
+@api_view(['GET'])
+def textPeople(request):
+    if request.method == 'GET':
+        today = datetime.datetime.today()
+        query = HistoryTable.objects.filter(date_out__isnull=True).filter(due_date__lt=today)
+        serializer = textPeopleFindSerializer(query, many=True)
+        data = serializer.data
+
+        for i in data:
+            print(i['email']['phone_number'])
+
+        return Response(serializer.data)
 
 #authenticate
 class LoginPoint(APIView):
@@ -202,8 +215,6 @@ class LoginPoint(APIView):
             return response
         else:
             return Response({'error':'Unauthorized'},status=status.HTTP_401_UNAUTHORIZED)
-
-
 
 @permission_classes([sessionCustomAuthentication])
 class LogoutPoint(APIView):
@@ -560,5 +571,6 @@ class reservationsClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins
             return lookUpRole
         except:
             return ""
+
 
 #special classes

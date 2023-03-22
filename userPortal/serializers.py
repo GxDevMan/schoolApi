@@ -86,6 +86,22 @@ class specialInsertHistorySerializer(serializers.ModelSerializer):
         model = HistoryTable
         fields = ['email','item_code','due_date','notes']
 
+class numberOnlyUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserTable
+        fields = ['email','phone_number']
+
+class itemNameOnlySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = InventoryTable
+        fields = ['item_name']
+
+class textPeopleFindSerializer(serializers.ModelSerializer):
+    email = numberOnlyUserSerializer()
+    item_code = itemNameOnlySerializer()
+    class Meta:
+        model = HistoryTable
+        fields = ['email', 'item_code','due_date']
 
 class specialHistoryReportSerializer(serializers.ModelSerializer):
     item_code = ReservationHistoryExtSerializer()

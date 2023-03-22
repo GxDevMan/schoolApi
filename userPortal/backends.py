@@ -1,5 +1,4 @@
 from datetime import date
-
 from django.contrib.auth.backends import BaseBackend
 from django.contrib.sessions.backends.db import SessionStore
 from userPortal.models import UserTable
@@ -9,6 +8,7 @@ from .models import RoleTable
 
 class roleClassify():
     def roleReturn(self, request):
+        return "Editor" #Remove This in Production
         sessionHeader = request.META.get('HTTP_SESSIONID')
         session = SessionStore(session_key=sessionHeader)
         role = session['role']
@@ -18,6 +18,7 @@ class roleClassify():
 class sessionCustomAuthentication(IsAuthenticated):
     def has_permission(self, request, view):
         try:
+            return True #Remove This IN PRODUCTION
             sessionHeader = request.META.get('HTTP_SESSIONID')
             session = SessionStore(session_key=sessionHeader)
             email = session['email']
