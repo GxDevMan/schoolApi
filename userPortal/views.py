@@ -1,13 +1,11 @@
-import os
 from django.contrib.auth import authenticate
 from django.contrib.sessions.backends.db import SessionStore
 from django.contrib.sessions.models import Session
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
-from .backends import sessionCustomAuthentication, sessionCustomAuthenticationTesting
+from .backends import sessionCustomAuthentication
 from .backends import roleClassify
 from rest_framework.response import Response
-from django.db import connections
 from .models import UserTable, InventoryTable, ReservationTable, CategoryTable
 from .models import RoleTable, HistoryTable
 from rest_framework.decorators import api_view, APIView, permission_classes
@@ -24,51 +22,53 @@ from .serializers import \
     multipleItemUpdateSerializer, specialInsertReservationSerializer, specialInsertHistorySerializer
 from rest_framework import generics, status
 from rest_framework import mixins
+from .backends import convertDate
 import datetime
 
 #function based
-@api_view(['GET'])
-def returnListofRoles(request):
-    if request.method == 'GET':
-        try:
-            db_conn = connections['default']
-        except:
-            response = "failed"
-            return Response(response)
+# @api_view(['GET'])
+# def returnListofRoles(request):
+#     if request.method == 'GET':
+#         try:
+#             db_conn = connections['default']
+#         except:
+#             response = "failed"
+#             return Response(response)
+#
+#         cursor = db_conn.cursor()
+#         cursor.execute("SELECT * FROM schooldb.role_table")
+#         roles = []
+#
+#         for row in cursor.fetchall():
+#             Role1 = RoleTable(role_id=row[0], role_name=row[1])
+#             roles.append(Role1)
+#
+#         querySet = RoleTable.objects.bulk_create(roles, ignore_conflicts=True)
+#
+#         data = []
+#
+#         for Role2 in querySet:
+#             data.append(
+#                 {
+#                     'role_id': Role2.role_id,
+#                     'role_name': Role2.role_name
+#                 }
+#             )
+#         return Response(data)
 
-        cursor = db_conn.cursor()
-        cursor.execute("SELECT * FROM schooldb.role_table")
-        roles = []
-
-        for row in cursor.fetchall():
-            Role1 = RoleTable(role_id=row[0], role_name=row[1])
-            roles.append(Role1)
-
-        querySet = RoleTable.objects.bulk_create(roles, ignore_conflicts=True)
-
-        data = []
-
-        for Role2 in querySet:
-            data.append(
-                {
-                    'role_id': Role2.role_id,
-                    'role_name': Role2.role_name
-                }
-            )
-        return Response(data)
-
-@api_view(['GET'])
-@permission_classes([sessionCustomAuthentication])
-def historyReport(request):
-    if request.method == 'GET':
-        getRole = roleClassify()
-        strRole = getRole.roleReturn(request)
-        if strRole == "Admin" or strRole == "Editor":
-            filteredData = HistoryTable.objects.filter(date_out__isnull=False).filter(date_out__lte=datetime.datetime.today()).select_related('item_code__category').select_related('email')
-            serializer = specialHistoryReportSerializer(filteredData, many=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        else:
-            return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
+#DEPRECIATED
+# @api_view(['GET'])
+# @permission_classes([sessionCustomAuthentication])
+# def historyReport(request):
+#     if request.method == 'GET':
+#         getRole = roleClassify()
+#         strRole = getRole.roleReturn(request)
+#         if strRole == "Admin" or strRole == "Editor":
+#             filteredData = HistoryTable.objects.filter(date_out__isnull=False).filter(date_out__lte=datetime.datetime.today()).select_related('item_code__category').select_related('email')
+#             serializer = specialHistoryReportSerializer(filteredData, many=True)
+#             return Response(serializer.data, status=status.HTTP_200_OK)
+#         else:
+#             return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
 
 @api_view(['GET'])
 @permission_classes([sessionCustomAuthentication])
@@ -226,7 +226,7 @@ def logoutAllUsers(request):
         else:
             return Response({'message':'Unauthorized'},status=status.HTTP_401_UNAUTHORIZED)
 
-
+#Class Based Views
 class countStatus(generics.GenericAPIView):
     permission_classes = [sessionCustomAuthentication]
     roleLookup = roleClassify()
@@ -274,7 +274,6 @@ class RoleClass(generics.GenericAPIView, mixins.ListModelMixin):
 
 class CategoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixins.RetrieveModelMixin, mixins.ListModelMixin):
     permission_classes = [sessionCustomAuthentication]
-
     serializer_class = CategorySerializer
     queryset = CategoryTable.objects.all()
     lookup_field = 'category_id'
@@ -318,15 +317,21 @@ class CategoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Upd
 class InventoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixins.RetrieveModelMixin, mixins.ListModelMixin):
     permission_classes = [sessionCustomAuthentication]
     queryset = InventoryTable.objects.all()
-    lookup_field = 'item_code'
+    lookup_field = ('item_code','filter')
     roleLookup = roleClassify()
     serializer_class = InventoryTableSerializer
 
-    def get(self, request, item_code=None):
+    def get(self, request, item_code=None, filter=None):
         strRole = self.getRole(request)
         if strRole == "Editor" or strRole == "Admin":
-            if item_code:
+            if item_code is not None:
                 queryset = self.get_queryset().filter(item_code=item_code)
+                serializer = specialInventorySerializer(queryset, many=True)
+                response = Response(serializer.data)
+                return response
+
+            if filter is not None:
+                queryset = self.get_queryset().filter(item_condition=filter)
                 serializer = specialInventorySerializer(queryset, many=True)
                 response = Response(serializer.data)
                 return response
@@ -368,8 +373,6 @@ class InventoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Up
                 Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response({'message':'Unauthorized'}, status=status.HTTP_200_OK)
-
-
 
     def delete(self, request, item_code=None):
         strRole = self.getRole(request)
@@ -436,16 +439,31 @@ class HistoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Upda
     serializer_class = HistorySerializer
     queryset = HistoryTable.objects.all()
     roleLookup = roleClassify()
-    lookup_field = 'history_id'
+    dateConversion = convertDate()
+    lookup_field = ('history_id', 'start_date', 'end_date')
 
-    def get(self, request, history_id=None):
-        if history_id:
-            queryset = self.get_queryset().filter(history_id=history_id)
-            serializer = specialHistorySerializer(queryset, many=True)
-            return Response(serializer.data)
+    def get(self, request, history_id=None, start_date=None, end_date=None):
+        strRole = self.getRole();
+        if strRole == "Admin" or strRole == "Editor":
+            if history_id:
+                queryset = self.get_queryset().filter(history_id=history_id)
+                serializer = specialHistorySerializer(queryset, many=True)
+                return Response(serializer.data)
+            if start_date and end_date:
+                startingDate = self.dateConversion.dateFormattoYYMMDD(start_date)
+                endingDate = self.dateConversion.dateFormattoYYMMDD(end_date)
+
+                filteredData = HistoryTable.objects.filter(date_out__isnull=False).filter(
+                    date_out__range=(startingDate, endingDate)).select_related('item_code__category').select_related(
+                    'email')
+                serializer = specialHistoryReportSerializer(filteredData, many=True)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            else:
+                serializer = specialHistorySerializer(self.get_queryset().order_by('date_out'), many=True)
+                return Response(serializer.data)
         else:
-            serializer = specialHistorySerializer(self.get_queryset().order_by('date_out'), many=True)
-            return Response(serializer.data)
+            return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
+
 
     def post(self, request):
         strRole = self.getRole(request)

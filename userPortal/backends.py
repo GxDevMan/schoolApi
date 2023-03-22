@@ -1,6 +1,7 @@
+from datetime import date
+
 from django.contrib.auth.backends import BaseBackend
 from django.contrib.sessions.backends.db import SessionStore
-
 from userPortal.models import UserTable
 from django.contrib.auth.hashers import PBKDF2PasswordHasher
 from rest_framework.permissions import  IsAuthenticated
@@ -71,3 +72,14 @@ class CorsMiddleware:
         response['Access-Control-Allow-Credentials'] = 'true'
 
         return response
+
+class convertDate:
+    def dateFormattoYYMMDD(self, date_input):
+        segmented_date = date_input.split('-')
+
+        year = int(segmented_date[0])
+        month = int(segmented_date[1])
+        day = int(segmented_date[2])
+
+        returningDate = date(year, month, day)
+        return returningDate

@@ -2,7 +2,7 @@ from django.urls import path
 from .views import CategoryClass
 from .views import testFunction
 from .views import reservationsClass, InventoryClass, HistoryClass, LoginPoint, LogoutPoint, RoleClass, UsersClass
-from .views import viewItemsthatCanBeReserved, historyReport, pendingReservation, updatePass
+from .views import viewItemsthatCanBeReserved, pendingReservation, updatePass
 from .views import logoutAllUsers, clearAllreservations, countStatus
 urlpatterns = [
     path('reservation/<int:reservation_id>', reservationsClass.as_view()),
@@ -16,6 +16,7 @@ urlpatterns = [
     path('category/', CategoryClass.as_view()),
 
     path('inventory/<int:item_code>', InventoryClass.as_view()),
+    path('inventory/<str:filter>', InventoryClass.as_view()),
     path('inventory/', InventoryClass.as_view()),
     path('statuscount/', countStatus.as_view()),
 
@@ -25,8 +26,8 @@ urlpatterns = [
     path('user/', UsersClass.as_view()),
 
     path('history/<int:history_id>', HistoryClass.as_view()),
+    path('history/withRange/<str:start_date>/<str:end_date>', HistoryClass.as_view()),
     path('history/',HistoryClass.as_view()),
-    path('historyReport/', historyReport),
 
     path('login/', LoginPoint.as_view()),
     path('logout/', LogoutPoint.as_view()),
