@@ -454,7 +454,7 @@ class HistoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Upda
     lookup_field = ('history_id', 'start_date', 'end_date')
 
     def get(self, request, history_id=None, start_date=None, end_date=None):
-        strRole = self.getRole();
+        strRole = self.getRole(request)
         if strRole == "Admin" or strRole == "Editor":
             if history_id:
                 queryset = self.get_queryset().filter(history_id=history_id)
