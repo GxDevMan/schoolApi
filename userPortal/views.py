@@ -16,10 +16,11 @@ from .serializers import \
     ReservationSerializer, \
     CategorySerializer, \
     HistorySerializer, \
-    changePassSerializer,\
+    changePassSerializer, \
     specialInventorySerializer, pendingReservationSerializer, specialHistorySerializer, \
     multipleItemInsertSerializer, specialHistoryReportSerializer, specialReservationSerializer, \
-    multipleItemUpdateSerializer, specialInsertReservationSerializer, specialInsertHistorySerializer, textPeopleFindSerializer
+    multipleItemUpdateSerializer, specialInsertReservationSerializer, specialInsertHistorySerializer, \
+    textPeopleFindSerializer
 from rest_framework import generics, status
 from rest_framework import mixins
 from .backends import convertDate
@@ -478,8 +479,21 @@ class UsersClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Update
 
     def delete(self, request, email=None):
         strRole = self.getRole(request)
-        if strRole == "Editor" or strRole == "Admin":
-            return self.destroy(request, email)
+        if strRole == "Editor":
+            if email:
+                return self.destroy(request, email)
+            else:
+                data = request.data
+                deletionCount = 0
+                for select in data:
+                    try:
+                        userObj = UserTable.objects.get(email=select['email'])
+                        userObj.delete()
+                        deletionCount += 1
+                    except:
+                        pass
+                return Response({'message': 'Accounts Deleted',
+                                 'accounts_deleted': deletionCount}, status=status.HTTP_200_OK)
         else:
             return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
 

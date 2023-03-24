@@ -18,7 +18,7 @@ class CategoryTable(models.Model):
 
 class HistoryTable(models.Model):
     history_id = models.AutoField(primary_key=True)
-    email = models.ForeignKey('UserTable', models.DO_NOTHING, db_column='email')
+    email = models.ForeignKey('UserTable', db_column='email', on_delete=models.CASCADE)
     item_code = models.ForeignKey('InventoryTable', on_delete=models.CASCADE, db_column='item_code')
     date_in = models.DateTimeField()
     date_out = models.DateTimeField(blank=True, null=True)
@@ -63,7 +63,7 @@ class InventoryTable(models.Model):
 
 class ReservationTable(models.Model):
     reservation_id = models.AutoField(primary_key=True)
-    email = models.ForeignKey('UserTable', models.DO_NOTHING, db_column='email')
+    email = models.ForeignKey('UserTable', on_delete=models.CASCADE, db_column='email')
     item_code = models.ForeignKey(InventoryTable, on_delete=models.CASCADE, db_column='item_code')
     data_of_reservation = models.DateField()
     date_of_expiration = models.DateField()
