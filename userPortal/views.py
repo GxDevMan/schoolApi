@@ -70,6 +70,10 @@ import datetime
 #         else:
 #             return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
 
+
+def frontEnd(request):
+    return render(request, 'index.html')
+
 @api_view(['GET'])
 @permission_classes([sessionCustomAuthentication])
 def pendingReservation(request):
@@ -146,9 +150,43 @@ def updatePass(request):
         except:
             return Response({'message': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
 
+@api_view(['PUT'])
+@permission_classes([sessionCustomAuthentication])
+def editorResetPass(request):
+    if request.method == 'PUT':
+        try:
+            getRole = roleClassify()
+            strRole = getRole.roleReturn(request)
+            if strRole == "Editor":
+                selectedEmail = request.data['email']
+                query = UserTable.objects.get(email=selectedEmail)
+                query.user_password = query.email
+                query.save()
+                return Response({'message': 'User Password Reset to Phone Numeber'}, status=status.HTTP_200_OK)
+            else:
+                return Response({'message': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
+        except:
+            return Response({'message': 'Failed to reset Password'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-def frontEnd(request):
-    return render(request, 'index.html')
+@api_view(['PUT'])
+@permission_classes([sessionCustomAuthentication])
+def editorChangePass(request):
+    if request.method == 'PUT':
+        try:
+            getRole = roleClassify()
+            strRole = getRole.roleReturn(request)
+            if strRole == "Editor":
+                selectedEmail = request.data['email']
+                passwordInput = request.data['password']
+                query = UserTable.objects.get(email=selectedEmail)
+                query.user_password = passwordInput
+                query.save()
+                return Response({'message': 'password set'}, status=status.HTTP_200_OK)
+            else:
+                return Response({'message': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
+        except:
+            return Response({'message': 'Failed to reset Password'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 @api_view(['GET'])
 def testFunction(request):
