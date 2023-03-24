@@ -3,7 +3,7 @@ from django.contrib.auth.backends import BaseBackend
 from django.contrib.sessions.backends.db import SessionStore
 from userPortal.models import UserTable
 from django.contrib.auth.hashers import PBKDF2PasswordHasher
-from rest_framework.permissions import  IsAuthenticated
+from rest_framework.permissions import IsAuthenticated
 from .models import RoleTable
 
 class roleClassify():

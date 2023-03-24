@@ -76,11 +76,30 @@ REST_FRAMEWORK = {
 #Will be set to whitelist once a domain is set
 CORS_ORIGIN_ALLOW_ALL = True
 TIMEOUT = 3
+STATIC_URL = 'static/'
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static/static'), #static files for react
+    os.path.join(BASE_DIR, 'static/images/'),
+    os.path.join(BASE_DIR, 'static/js'),
+    os.path.join(BASE_DIR, 'static')
+]
+
+STATICFILES_FINDERS = [
+    'django.contrib.staticfiles.finders.FileSystemFinder',
+    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+]
 
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [
+            os.path.join(BASE_DIR, 'static'),
+            os.path.join(BASE_DIR, 'static/static'),
+            os.path.join(BASE_DIR, 'static/images'),
+            os.path.join(BASE_DIR, 'static/js'),
+
+
+                 ], #points to index.html
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -155,8 +174,6 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
-
-STATIC_URL = 'static/'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field

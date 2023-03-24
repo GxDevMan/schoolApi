@@ -1,7 +1,7 @@
 from django.contrib.auth import authenticate
 from django.contrib.sessions.backends.db import SessionStore
 from django.contrib.sessions.models import Session
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, render
 from django.db.models import Q
 from .backends import sessionCustomAuthentication
 from .backends import roleClassify
@@ -145,6 +145,10 @@ def updatePass(request):
                 return Response({'error': 'password does not match the old password'}, status=status.HTTP_404_NOT_FOUND)
         except:
             return Response({'message': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
+
+
+def frontEnd(request):
+    return render(request, 'index.html')
 
 @api_view(['GET'])
 def testFunction(request):
@@ -328,9 +332,19 @@ class CategoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Upd
 class InventoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixins.RetrieveModelMixin, mixins.ListModelMixin):
     permission_classes = [sessionCustomAuthentication]
     queryset = InventoryTable.objects.all()
-    lookup_field = ('item_code','filter')
+    lookup_field = 'item_code'
+    lookup_url_kwarg = 'item_code'
+    filter_lookup_field = 'filter'
+    filter_lookup_url_kwarg = 'filter'
     roleLookup = roleClassify()
     serializer_class = InventoryTableSerializer
+
+    def put(self, request, item_code=None):
+        strRole = self.getRole(request)
+        if strRole == "Editor" or strRole == "Admin":
+            return self.update(request, item_code)
+        else:
+            return Response({'message':'Unauthorized'}, status=status.HTTP_200_OK)
 
     def get(self, request, item_code=None, filter=None):
         strRole = self.getRole(request)
@@ -365,13 +379,6 @@ class InventoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Up
             return Response(serializer.data, status=status.HTTP_200_OK)
         else:
             return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
-
-    def put(self, request, item_code=None):
-        strRole = self.getRole(request)
-        if strRole == "Editor" or strRole == "Admin":
-            return self.update(request, item_code)
-        else:
-            return Response({'message':'Unauthorized'}, status=status.HTTP_200_OK)
 
     def patch(self, request):
         strRole = self.getRole(request)
@@ -451,7 +458,15 @@ class HistoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Upda
     queryset = HistoryTable.objects.all()
     roleLookup = roleClassify()
     dateConversion = convertDate()
-    lookup_field = ('history_id', 'start_date', 'end_date')
+    lookup_field = 'history_id'
+    lookup_url_kwarg = 'history_id'
+    startdate_lookup_field = 'start_date'
+    startdate_lookup_url_kwarg = 'start_date'
+    enddate_lookup_field = 'end_date'
+    endate_lookup_url_kwarg = 'end_date'
+
+    def put(self, request, history_id=None):
+        return self.update(request, history_id)
 
     def get(self, request, history_id=None, start_date=None, end_date=None):
         strRole = self.getRole(request)
@@ -501,9 +516,6 @@ class HistoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Upda
             serializer.save()
         else:
             return Response({'message': 'that item is currently out'}, status=status.HTTP_400_BAD_REQUEST)
-
-    def put(self, request, history_id=None):
-        return self.update(request, history_id)
 
     def delete(self, request, history_id=None):
         return self.destroy(request, history_id)

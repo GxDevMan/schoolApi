@@ -33,7 +33,7 @@ class CategorySerializer(serializers.ModelSerializer):
 class UserTableSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserTable
-        fields = '__all__'
+        fields = ['email','phone_number','first_name','last_name','role']
 
 class InventoryTableSerializer(serializers.ModelSerializer):
     class Meta:
