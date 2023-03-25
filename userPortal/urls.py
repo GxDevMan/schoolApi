@@ -34,6 +34,8 @@ urlpatterns = [
     path('user/', UsersClass.as_view()),
 
     path('history/<int:history_id>', HistoryClass.as_view()),
+    path('history/returnItems/<str:returnItems>', HistoryClass.as_view()),
+    path('history/lost/<str:lost>', HistoryClass.as_view()),
     path('history/withRange/<str:start_date>/<str:end_date>', HistoryClass.as_view()),
     path('history/',HistoryClass.as_view()),
 

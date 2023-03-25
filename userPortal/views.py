@@ -163,7 +163,7 @@ def editorResetPass(request):
                 query = UserTable.objects.get(email=selectedEmail)
                 query.user_password = query.email
                 query.save()
-                return Response({'message': 'User Password Reset to Phone Numeber'}, status=status.HTTP_200_OK)
+                return Response({'message': 'User Password Reset to user email'}, status=status.HTTP_200_OK)
             else:
                 return Response({'message': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
         except:
@@ -516,9 +516,62 @@ class HistoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Upda
     startdate_lookup_url_kwarg = 'start_date'
     enddate_lookup_field = 'end_date'
     endate_lookup_url_kwarg = 'end_date'
+    lost_lookup_field = 'lost'
+    lost_lookup_url_kwarg = 'lost'
+    return_lookup_field = 'returnItems'
+    return_lookup_url_kwarg = 'returnItems'
 
-    def put(self, request, history_id=None):
-        return self.update(request, history_id)
+    def put(self, request, history_id=None, lost=None, returnItems=None):
+        strRole = self.getRole(request)
+        if strRole == "Admin" or strRole == "Editor":
+            if history_id:
+                return self.update(request, history_id)
+            if returnItems:
+                data = request.data
+                itemsReturned = 0
+                for eachData in data:
+                    try:
+                        today = datetime.datetime.now()
+                        selectedHistory = HistoryTable.objects.get(history_id=eachData['history_id'])
+                        if selectedHistory.date_out is None:
+                            note = eachData['notes']
+                            if note == "":
+                                selectedHistory.notes = "No Comment"
+                            else:
+                                selectedHistory.notes = note
+                            selectedHistory.date_out = today
+                            itemsReturned += 1
+                            selectedHistory.save()
+                    except:
+                        pass
+                return Response({'message': 'Items returned, items now Available',
+                                 'items returned': itemsReturned}
+                                , status=status.HTTP_200_OK)
+            if lost:
+                data = request.data
+                itemLostcount = 0
+                for eachData in data:
+                    try:
+                        today = datetime.datetime.now()
+                        selectedHistory = HistoryTable.objects.get(history_id=eachData['history_id'])
+                        selectedHistory.notes = "lost"
+                        selectedHistory.date_out = today
+
+
+                        selectedItem = InventoryTable.objects.get(item_code=selectedHistory.item_code.item_code)
+                        selectedItem.item_condition = "Lost"
+                        selectedItem.status = "Unavailable"
+
+                        selectedItem.save()
+                        selectedHistory.save()
+                        itemLostcount += 1
+                    except:
+                        pass
+                return Response({'message': 'Item/s marked as lost, items now unavailble',
+                                 'items lost': itemLostcount}
+                                , status=status.HTTP_200_OK)
+        else:
+            return Response({'message': 'Unauthorized Access'}, status=status.HTTP_200_OK)
 
     def get(self, request, history_id=None, start_date=None, end_date=None):
         strRole = self.getRole(request)
@@ -549,7 +602,6 @@ class HistoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Upda
             try:
                 serializer = specialInsertHistorySerializer(data=request.data, many=True)
                 serializer.is_valid(raise_exception=True)
-
                 self.perform_create(serializer)
                 return Response(serializer.data, status=status.HTTP_200_OK)
             except Exception as e:
@@ -578,6 +630,7 @@ class HistoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Upda
             return lookUpRole
         except:
             return ""
+
 
 class reservationsClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixins.RetrieveModelMixin, mixins.ListModelMixin):
     permission_classes = [sessionCustomAuthentication]
