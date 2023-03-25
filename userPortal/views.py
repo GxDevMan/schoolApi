@@ -491,7 +491,8 @@ class UsersClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Update
             if serializer.is_valid():
                 user = UserTable.objects.get(email=email)
                 user.phone_number = serializer.data['phone_number']
-                user.role.role_id = serializer.data['role']
+                role = RoleTable.objects.get(role_id=serializer.data['role'])
+                user.role = role
                 user.save()
                 return self.retrieve(request)
             return Response({'error': 'Invalid data'}, status=status.HTTP_400_BAD_REQUEST)
