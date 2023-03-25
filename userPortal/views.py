@@ -1,3 +1,5 @@
+import os
+from twilio.rest import Client
 from django.contrib.auth import authenticate
 from django.contrib.sessions.backends.db import SessionStore
 from django.contrib.sessions.models import Session
@@ -20,7 +22,7 @@ from .serializers import \
     specialInventorySerializer, pendingReservationSerializer, specialHistorySerializer, \
     multipleItemInsertSerializer, specialHistoryReportSerializer, specialReservationSerializer, \
     multipleItemUpdateSerializer, specialInsertReservationSerializer, specialInsertHistorySerializer, \
-    textPeopleFindSerializer
+    textPeopleFindSerializer, specialUserTableUpdateSerializer
 from rest_framework import generics, status
 from rest_framework import mixins
 from .backends import convertDate
@@ -194,6 +196,17 @@ def testFunction(request):
     if request.method == 'GET':
 
         try:
+            # SID = os.getenv('TWILIO_SID')
+            # auth = os.getenv('TWILIO_AUTH')
+            # client = Client(SID, auth)
+            #
+            # message = client.messages.create(
+            #     body='Hi there',
+            #     from_='+14754052778',
+            #     to='+639672945681'
+            # )
+            # print(message.sid)
+
             pass
             # <year>-<month>-<day>-<hour>-<minute>-<second>-<microsecond>
             # print(request.GET.get('start_date'))
@@ -473,9 +486,18 @@ class UsersClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Update
             return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
 
     def put(self, request, email=None):
+        print("testing")
         strRole = self.getRole(request)
         if strRole == "Editor" or strRole == "Admin":
-            return self.update(request, email)
+            serializer = specialUserTableUpdateSerializer(data=request.data)
+            if serializer.is_valid():
+                user = UserTable.objects.get(email=email)
+                user.phone_number = serializer.data['phone_number']
+                user.role.role_id = serializer.data['role']
+                user.save()
+                return self.retrieve(request)
+            return Response({'error': 'Invalid data'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
 
     def delete(self, request, email=None):
         strRole = self.getRole(request)

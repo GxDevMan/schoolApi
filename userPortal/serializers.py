@@ -35,7 +35,6 @@ class UserTableSerializer(serializers.ModelSerializer):
         model = UserTable
         fields = ['email','phone_number','first_name','last_name','role']
 
-
 class InventoryTableSerializer(serializers.ModelSerializer):
     class Meta:
         model = InventoryTable
@@ -132,3 +131,8 @@ class changePassSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserTable
         fields = ['user_password']
+
+class specialUserTableUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserTable
+        fields = ['phone_number', 'role']
