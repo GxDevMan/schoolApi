@@ -131,8 +131,3 @@ class changePassSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserTable
         fields = ['user_password']
-
-class specialUserTableUpdateSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = UserTable
-        fields = ['phone_number', 'role']

@@ -20,7 +20,7 @@ from .serializers import \
     specialInventorySerializer, pendingReservationSerializer, specialHistorySerializer, \
     multipleItemInsertSerializer, specialHistoryReportSerializer, specialReservationSerializer, \
     multipleItemUpdateSerializer, specialInsertReservationSerializer, specialInsertHistorySerializer, \
-    textPeopleFindSerializer, specialUserTableUpdateSerializer
+    textPeopleFindSerializer
 from rest_framework import generics, status
 from rest_framework import mixins
 from .backends import convertDate
@@ -484,18 +484,20 @@ class UsersClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Update
             return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
 
     def put(self, request, email=None):
-        print("testing")
         strRole = self.getRole(request)
         if strRole == "Editor" or strRole == "Admin":
-            serializer = specialUserTableUpdateSerializer(data=request.data)
-            if serializer.is_valid():
-                user = UserTable.objects.get(email=email)
-                user.phone_number = serializer.data['phone_number']
-                role = RoleTable.objects.get(role_id=serializer.data['role'])
+            user = UserTable.objects.get(email=email)
+            try:
+                user.phone_number = request.data['phone_number']
+            except:
+                pass
+            try:
+                role = RoleTable.objects.get(role_id=request.data['role'])
                 user.role = role
-                user.save()
-                return self.retrieve(request)
-            return Response({'error': 'Invalid data'}, status=status.HTTP_400_BAD_REQUEST)
+            except:
+                pass
+            user.save()
+            return self.retrieve(request)
         return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
 
     def delete(self, request, email=None):
