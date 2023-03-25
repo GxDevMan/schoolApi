@@ -1,5 +1,3 @@
-import os
-from twilio.rest import Client
 from django.contrib.auth import authenticate
 from django.contrib.sessions.backends.db import SessionStore
 from django.contrib.sessions.models import Session
