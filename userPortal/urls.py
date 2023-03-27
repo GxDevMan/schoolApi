@@ -4,10 +4,8 @@ from .views import testFunction
 from .views import reservationsClass, InventoryClass, HistoryClass, LoginPoint, LogoutPoint, RoleClass, UsersClass
 from .views import viewItemsthatCanBeReserved, pendingReservation, updatePass
 from .views import logoutAllUsers, clearAllreservations, countStatus, textPeople
-from .views import frontEnd, editorResetPass, editorChangePass
+from .views import editorResetPass, editorChangePass
 urlpatterns = [
-    path('', frontEnd),
-
     path('resetPassword/', editorResetPass),
     path('changePassword/', editorChangePass),
 

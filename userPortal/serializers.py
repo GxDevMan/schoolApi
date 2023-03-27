@@ -19,10 +19,16 @@ class pendingExtReservation(serializers.ModelSerializer):
         model = InventoryTable
         fields = ['item_code','item_name']
 
+class historyRoleDispExtSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RoleTable
+        fields = ['role_name']
+
 class HistoryReportExtUserTable(serializers.ModelSerializer):
+    role = historyRoleDispExtSerializer()
     class Meta:
         model = UserTable
-        fields = ['email','first_name','last_name']
+        fields = ['email','first_name','last_name','role']
 
 #1 is to 1
 class CategorySerializer(serializers.ModelSerializer):

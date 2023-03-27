@@ -71,10 +71,6 @@ import datetime
 #         else:
 #             return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
 
-
-def frontEnd(request):
-    return render(request, 'index.html')
-
 @api_view(['GET'])
 @permission_classes([sessionCustomAuthentication])
 def pendingReservation(request):
@@ -544,6 +540,28 @@ class HistoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Upda
     return_lookup_field = 'returnItems'
     return_lookup_url_kwarg = 'returnItems'
 
+    def get(self, request, history_id=None, start_date=None, end_date=None):
+        strRole = self.getRole(request)
+        if strRole == "Admin" or strRole == "Editor":
+            if history_id:
+                queryset = self.get_queryset().filter(history_id=history_id)
+                serializer = specialHistorySerializer(queryset, many=True)
+                return Response(serializer.data)
+            if start_date and end_date:
+                startingDate = self.dateConversion.dateFormattoYYMMDD(start_date)
+                endingDate = self.dateConversion.dateFormattoYYMMDD(end_date)
+
+                filteredData = HistoryTable.objects.filter(date_out__isnull=False).filter(
+                    date_out__range=(startingDate, endingDate)).select_related('item_code__category').select_related(
+                    'email')
+                serializer = specialHistoryReportSerializer(filteredData, many=True)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            else:
+                serializer = specialHistorySerializer(self.get_queryset().order_by('date_out'), many=True)
+                return Response(serializer.data)
+        else:
+            return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
+
     def put(self, request, history_id=None, lost=None, returnItems=None):
         strRole = self.getRole(request)
         if strRole == "Admin" or strRole == "Editor":
@@ -595,29 +613,6 @@ class HistoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Upda
                                 , status=status.HTTP_200_OK)
         else:
             return Response({'message': 'Unauthorized Access'}, status=status.HTTP_200_OK)
-
-    def get(self, request, history_id=None, start_date=None, end_date=None):
-        strRole = self.getRole(request)
-        if strRole == "Admin" or strRole == "Editor":
-            if history_id:
-                queryset = self.get_queryset().filter(history_id=history_id)
-                serializer = specialHistorySerializer(queryset, many=True)
-                return Response(serializer.data)
-            if start_date and end_date:
-                startingDate = self.dateConversion.dateFormattoYYMMDD(start_date)
-                endingDate = self.dateConversion.dateFormattoYYMMDD(end_date)
-
-                filteredData = HistoryTable.objects.filter(date_out__isnull=False).filter(
-                    date_out__range=(startingDate, endingDate)).select_related('item_code__category').select_related(
-                    'email')
-                serializer = specialHistoryReportSerializer(filteredData, many=True)
-                return Response(serializer.data, status=status.HTTP_200_OK)
-            else:
-                serializer = specialHistorySerializer(self.get_queryset().order_by('date_out'), many=True)
-                return Response(serializer.data)
-        else:
-            return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
-
 
     def post(self, request):
         strRole = self.getRole(request)

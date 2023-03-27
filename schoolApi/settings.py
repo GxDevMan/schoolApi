@@ -18,7 +18,6 @@ load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
 
@@ -28,8 +27,8 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
+#get your domain and put it here
 ALLOWED_HOSTS = []
-
 
 # Application definition
 INSTALLED_APPS = [
@@ -69,20 +68,14 @@ CORS_ALLOW_HEADERS = ['sessionid', 'content-type']
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.SessionAuthentication',
-        # ... other authentication classes ...
     ],
 }
 
 #Will be set to whitelist once a domain is set
 CORS_ORIGIN_ALLOW_ALL = True
 TIMEOUT = 3
-STATIC_URL = 'static/'
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'static/static'), #static files for react
-    os.path.join(BASE_DIR, 'static/images/'),
-    os.path.join(BASE_DIR, 'static/js'),
-    os.path.join(BASE_DIR, 'static')
-]
+STATIC_URL = '/static/'
+STATIC_ROOT = '/staticfiles/'
 
 STATICFILES_FINDERS = [
     'django.contrib.staticfiles.finders.FileSystemFinder',
@@ -92,14 +85,7 @@ STATICFILES_FINDERS = [
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [
-            os.path.join(BASE_DIR, 'static'),
-            os.path.join(BASE_DIR, 'static/static'),
-            os.path.join(BASE_DIR, 'static/images'),
-            os.path.join(BASE_DIR, 'static/js'),
-
-
-                 ], #points to index.html
+        'DIRS': [],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
