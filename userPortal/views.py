@@ -121,11 +121,9 @@ def viewItemsthatCanBeReserved(request):
 def updatePass(request):
     if request.method == 'PUT':
         try:
-            getRole = roleClassify()
-            strRole = getRole.roleReturn(request)
-            sessionemail = request.session['email']
             #password = request.data['user_password'] new password
-            sessionemail = request.session['email'] # <--- for testing ONLY
+
+            sessionemail = request.data['email'] # <--- for testing ONLY
             old_password = request.data['old_password']
 
             new_password = request.data['new_password']
@@ -618,7 +616,6 @@ class HistoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Upda
         if strRole == "Editor" or strRole == "Admin":
             data = request.data
             count = 0
-            print(data)
             for eachData in data:
                 email = eachData['email']
                 item_code = eachData['item_code']
