@@ -4,13 +4,14 @@ from .views import testFunction
 from .views import reservationsClass, InventoryClass, HistoryClass, LoginPoint, LogoutPoint, RoleClass, UsersClass
 from .views import viewItemsthatCanBeReserved, pendingReservation, updatePass
 from .views import logoutAllUsers, clearAllreservations, countStatus, textPeople
-from .views import editorResetPass, editorChangePass, specificHistoryClass
+from .views import editorResetPass, editorChangePass, specificHistoryClass, reservationTransfer
 urlpatterns = [
     path('resetPassword/', editorResetPass),
     path('changePassword/', editorChangePass),
 
     path('reservation/<int:reservation_id>', reservationsClass.as_view()),
     path('reservation/', reservationsClass.as_view()),
+    path('confirmReservation/', reservationTransfer.as_view()),
     path('pendingReservations/', pendingReservation),
     path('clearReservations/', clearAllreservations),
 

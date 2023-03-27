@@ -108,10 +108,11 @@ class HistoryTable(models.Model):
         db_table = 'history_table'
 
     def save(self, *args, **kwargs):
-        if not self.history_id:
+        if not self.history_id or self.due_date:
             today = timezone.now()
 
             self.date_in = today
+            self.due_date = today
             super().save(*args, **kwargs)
         else:
             super().save(*args, **kwargs)

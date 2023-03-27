@@ -28,7 +28,8 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 DEBUG = True
 
 #get your domain and put it here
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
+CSRF_TRUSTED_ORIGINS = ['http://localhost']
 
 # Application definition
 INSTALLED_APPS = [
@@ -74,8 +75,8 @@ REST_FRAMEWORK = {
 #Will be set to whitelist once a domain is set
 CORS_ORIGIN_ALLOW_ALL = True
 TIMEOUT = 3
-STATIC_URL = '/static/'
-STATIC_ROOT = '/staticfiles/'
+STATIC_URL = '/api/static/'
+STATIC_ROOT = '/api/static/'
 
 STATICFILES_FINDERS = [
     'django.contrib.staticfiles.finders.FileSystemFinder',

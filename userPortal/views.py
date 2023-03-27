@@ -127,6 +127,7 @@ def updatePass(request):
             strRole = getRole.roleReturn(request)
             sessionemail = request.session['email']
             #password = request.data['user_password'] new password
+            sessionemail = request.session['email'] # <--- for testing ONLY
             old_password = request.data['old_password']
 
             new_password = request.data['new_password']
@@ -649,29 +650,6 @@ class HistoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Upda
         except:
             return ""
 
-
-class specificHistoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixins.RetrieveModelMixin, mixins.ListModelMixin):
-    permission_classes = [sessionCustomAuthentication]
-    serializer_class = specificUserHistorySerializer
-    queryset = HistoryTable.objects.all()
-    roleLookup = roleClassify()
-
-    #Change to get request in production
-    def post(self, request):
-        strRole = self.getRole(request)
-
-        #GET THE EMAIL FROM THE SESSION IN PRODUCTION
-        email = request.data['email']
-        serializer = specificUserHistorySerializer(self.get_queryset().order_by('date_out').filter(email=email).filter(date_out__isnull=False), many=True)
-        return Response(serializer.data)
-
-    def getRole(self, request):
-        try:
-            lookUpRole = self.roleLookup.roleReturn(request)
-            return lookUpRole
-        except:
-            return ""
-
 class reservationsClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixins.RetrieveModelMixin, mixins.ListModelMixin):
     permission_classes = [sessionCustomAuthentication]
     serializer_class = ReservationSerializer
@@ -731,3 +709,67 @@ class reservationsClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins
 
 
 #special classes
+
+class specificHistoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixins.RetrieveModelMixin, mixins.ListModelMixin):
+    permission_classes = [sessionCustomAuthentication]
+    serializer_class = specificUserHistorySerializer
+    queryset = HistoryTable.objects.all()
+    roleLookup = roleClassify()
+
+    #Change to get request in production
+    def post(self, request):
+        strRole = self.getRole(request)
+
+        #GET THE EMAIL FROM THE SESSION IN PRODUCTION
+        email = request.data['email']
+        serializer = specificUserHistorySerializer(self.get_queryset().order_by('date_out').filter(email=email).filter(date_out__isnull=False), many=True)
+        return Response(serializer.data)
+
+    def getRole(self, request):
+        try:
+            lookUpRole = self.roleLookup.roleReturn(request)
+            return lookUpRole
+        except:
+            return ""
+
+class reservationTransfer(generics.GenericAPIView, mixins.CreateModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixins.RetrieveModelMixin, mixins.ListModelMixin):
+    permission_classes = [sessionCustomAuthentication]
+    serializer_class = specificUserHistorySerializer
+    queryset = HistoryTable.objects.all()
+    roleLookup = roleClassify()
+
+    def post(self, request):
+        strRole = self.getRole(request)
+        if strRole == "Editor" or strRole == "Admin":
+            data = request.data
+            for eachData in data:
+                today = datetime.date.today()
+                today_str = today.strftime('%Y-%m-%d')
+
+                reservationId = eachData['reservation_id']
+                selectedReserve = ReservationTable.objects.filter(reservation_id=reservationId).filter(claim=False).filter(date_of_expiration__gte=today_str)
+                email = eachData['email']
+                item_code = eachData['item_code']
+                notes = eachData['notes']
+
+                user = UserTable.objects.get(email=email)
+                item = InventoryTable.objects.get(item_code=item_code)
+
+                if user is not None and item is not None and selectedReserve is not None:
+                    history = HistoryTable.objects.create(
+                        email=user,
+                        item_code=item,
+                        notes=notes,
+                    )
+                    selectedReserve.claim = True
+                    selectedReserve.delete()
+                    history.save()
+            return Response(status=status.HTTP_200_OK)
+
+    def getRole(self, request):
+        try:
+            lookUpRole = self.roleLookup.roleReturn(request)
+            return lookUpRole
+        except:
+            return ""
+
