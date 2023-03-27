@@ -7,8 +7,8 @@ from .views import logoutAllUsers, clearAllreservations, countStatus, textPeople
 from .views import editorResetPass, editorChangePass, specificHistoryClass, reservationTransfer, updatePass
 urlpatterns = [
     path('userChangePassword/', updatePass),
-    path('editorresetPassword/', editorResetPass),
-    path('ediotrchangePassword/', editorChangePass),
+    path('editorResetPassword/', editorResetPass),
+    path('editorChangePassword/', editorChangePass),
 
     path('reservation/<int:reservation_id>', reservationsClass.as_view()),
     path('reservation/', reservationsClass.as_view()),
