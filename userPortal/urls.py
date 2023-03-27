@@ -4,7 +4,7 @@ from .views import testFunction
 from .views import reservationsClass, InventoryClass, HistoryClass, LoginPoint, LogoutPoint, RoleClass, UsersClass
 from .views import viewItemsthatCanBeReserved, pendingReservation, updatePass
 from .views import logoutAllUsers, clearAllreservations, countStatus, textPeople
-from .views import editorResetPass, editorChangePass
+from .views import editorResetPass, editorChangePass, specificHistoryClass
 urlpatterns = [
     path('resetPassword/', editorResetPass),
     path('changePassword/', editorChangePass),
@@ -36,6 +36,8 @@ urlpatterns = [
     path('history/lost/<str:lost>', HistoryClass.as_view()),
     path('history/withRange/<str:start_date>/<str:end_date>', HistoryClass.as_view()),
     path('history/',HistoryClass.as_view()),
+
+    path('userHistory/', specificHistoryClass.as_view()),
 
     path('login/', LoginPoint.as_view()),
     path('logout/', LogoutPoint.as_view()),

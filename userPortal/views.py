@@ -20,7 +20,7 @@ from .serializers import \
     specialInventorySerializer, pendingReservationSerializer, specialHistorySerializer, \
     multipleItemInsertSerializer, specialHistoryReportSerializer, specialReservationSerializer, \
     multipleItemUpdateSerializer, specialInsertReservationSerializer, specialInsertHistorySerializer, \
-    textPeopleFindSerializer
+    textPeopleFindSerializer, specificUserHistorySerializer
 from rest_framework import generics, status
 from rest_framework import mixins
 from .backends import convertDate
@@ -649,6 +649,28 @@ class HistoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Upda
         except:
             return ""
 
+
+class specificHistoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixins.RetrieveModelMixin, mixins.ListModelMixin):
+    permission_classes = [sessionCustomAuthentication]
+    serializer_class = specificUserHistorySerializer
+    queryset = HistoryTable.objects.all()
+    roleLookup = roleClassify()
+
+    #Change to get request in production
+    def post(self, request):
+        strRole = self.getRole(request)
+
+        #GET THE EMAIL FROM THE SESSION IN PRODUCTION
+        email = request.data['email']
+        serializer = specificUserHistorySerializer(self.get_queryset().order_by('date_out').filter(email=email).filter(date_out__isnull=False), many=True)
+        return Response(serializer.data)
+
+    def getRole(self, request):
+        try:
+            lookUpRole = self.roleLookup.roleReturn(request)
+            return lookUpRole
+        except:
+            return ""
 
 class reservationsClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixins.RetrieveModelMixin, mixins.ListModelMixin):
     permission_classes = [sessionCustomAuthentication]

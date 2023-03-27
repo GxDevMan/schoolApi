@@ -132,8 +132,18 @@ class pendingReservationSerializer(serializers.ModelSerializer):
         model = ReservationTable
         fields = ['reservation_id','item_code','date_of_expiration']
 
-
 class changePassSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserTable
         fields = ['user_password']
+
+class extspecificUserHistorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = InventoryTable
+        fields = ['item_code','item_name']
+
+class specificUserHistorySerializer(serializers.ModelSerializer):
+    item_code = extspecificUserHistorySerializer()
+    class Meta:
+        model = HistoryTable
+        fields = ['item_code','date_in','date_out']
