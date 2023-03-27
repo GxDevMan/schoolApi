@@ -1,4 +1,3 @@
-from django.db.models import Q
 from rest_framework import serializers
 from .models import UserTable, \
     InventoryTable, \
@@ -87,11 +86,6 @@ class specialInsertReservationSerializer(serializers.ModelSerializer):
         model = ReservationTable
         fields = ['email','item_code','claim']
 
-class specialInsertHistorySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = HistoryTable
-        fields = ['email','item_code','due_date','notes']
-
 class numberOnlyUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserTable
@@ -147,3 +141,9 @@ class specificUserHistorySerializer(serializers.ModelSerializer):
     class Meta:
         model = HistoryTable
         fields = ['item_code','date_in','date_out']
+
+class specificUserReservationSerializer(serializers.ModelSerializer):
+    item_code = extspecificUserHistorySerializer()
+    class Meta:
+        model = ReservationTable
+        fields = ['reservation_id','item_code','date_of_expiration']

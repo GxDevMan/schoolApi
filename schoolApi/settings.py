@@ -29,8 +29,8 @@ DEBUG = True
 
 #get your domain and put it here
 ALLOWED_HOSTS = ['*']
-CSRF_TRUSTED_ORIGINS = ['http://localhost']
-
+#CSRF_TRUSTED_ORIGINS = ['http://127.0.0.1:8000/', 'http://localhost:8080']
+TIME_ZONE = 'Asia/Manila'
 # Application definition
 INSTALLED_APPS = [
     'rest_framework',

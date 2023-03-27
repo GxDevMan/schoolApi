@@ -1,5 +1,4 @@
-import datetime
-from datetime import date
+import pytz
 from django.utils import timezone
 
 from django.db import models
@@ -76,15 +75,15 @@ class ReservationTable(models.Model):
     claim = models.IntegerField()
 
     def save(self,  *args, **kwargs):
-        if not self.reservation_id:
-            today = date.today()
+        if not self.data_of_reservation:
+            today = timezone.now().today()
             today_str = today.strftime('%Y-%m-%d')
-
             self.data_of_reservation = today_str
+        if not self.date_of_expiration:
+            today = timezone.now().today()
+            today_str = today.strftime('%Y-%m-%d')
             self.date_of_expiration = today_str
-            super().save(*args, **kwargs)
-        else:
-            super().save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         stringZ = "{item} : {email} : {name} : Expiration - {datetime}"
@@ -108,14 +107,18 @@ class HistoryTable(models.Model):
         db_table = 'history_table'
 
     def save(self, *args, **kwargs):
-        if not self.history_id or self.due_date:
+        if not self.due_date:
             today = timezone.now()
-
-            self.date_in = today
             self.due_date = today
-            super().save(*args, **kwargs)
-        else:
-            super().save(*args, **kwargs)
+        if not self.date_in:
+            today = timezone.now()
+            self.date_in = today
+        if not self.due_date:
+            today = timezone.now()
+            self.due_date = today
+        if not self.notes:
+            self.notes = "N/A"
+        super().save(*args, **kwargs)
 
 
     def __str__(self):
