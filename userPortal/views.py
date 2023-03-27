@@ -134,6 +134,9 @@ def updatePass(request):
 
             selectedData = get_object_or_404(UserTable, email=sessionemail)
             user = authenticate(request, email=sessionemail, password=old_password)
+            if user and new_password2 == old_password:
+                return Response({'message': 'New password matches old password'}, status=status.HTTP_400_BAD_REQUEST)
+
             if user is not None:
                 serializer = changePassSerializer(selectedData, request.data)
                 if serializer.is_valid():
