@@ -6,7 +6,7 @@ from .views import viewItemsthatCanBeReserved, pendingReservation, updatePass
 from .views import logoutAllUsers, clearAllreservations, countStatus, textPeople, specificReservationClass
 from .views import editorResetPass, editorChangePass, specificHistoryClass, reservationTransfer, updatePass
 urlpatterns = [
-    path('userChangePassword', updatePass),
+    path('userChangePassword/', updatePass),
     path('editorresetPassword/', editorResetPass),
     path('ediotrchangePassword/', editorChangePass),
 
