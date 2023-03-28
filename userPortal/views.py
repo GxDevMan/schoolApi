@@ -254,6 +254,7 @@ class LoginPoint(APIView):
 
             session['email'] = email
             session['role'] = user.role_id
+            request.session['email'] = email #testing only
             session.create()
 
             queryset = RoleTable.objects.filter(role_id=user.role_id)
