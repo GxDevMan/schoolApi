@@ -25,7 +25,9 @@ class UserTable(models.Model):
     user_password = models.CharField(max_length=1000)
 
     def save(self, *args, **kwargs):
-        self.user_password = PBKDF2PasswordHasher().encode(self.user_password, PBKDF2PasswordHasher().salt())
+        if self.user_password:
+            self.user_password = PBKDF2PasswordHasher().encode(self.user_password, PBKDF2PasswordHasher().salt())
+
         super().save(*args, **kwargs)
 
 

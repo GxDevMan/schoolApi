@@ -147,3 +147,8 @@ class specificUserReservationSerializer(serializers.ModelSerializer):
     class Meta:
         model = ReservationTable
         fields = ['reservation_id','item_code','date_of_expiration']
+
+class UserInsertTableSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserTable
+        fields = ['email','phone_number','first_name','last_name','role','user_password']

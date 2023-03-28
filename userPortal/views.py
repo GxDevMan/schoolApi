@@ -21,7 +21,8 @@ from .serializers import \
     specialInventorySerializer, pendingReservationSerializer, specialHistorySerializer, \
     multipleItemInsertSerializer, specialHistoryReportSerializer, specialReservationSerializer, \
     multipleItemUpdateSerializer, specialInsertReservationSerializer, \
-    textPeopleFindSerializer, specificUserHistorySerializer, specificUserReservationSerializer
+    textPeopleFindSerializer, specificUserHistorySerializer, specificUserReservationSerializer, \
+    UserInsertTableSerializer
 from rest_framework import generics, status
 from rest_framework import mixins
 from .backends import convertDate
@@ -472,7 +473,7 @@ class UsersClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Update
     def post(self, request):
         strRole = self.getRole(request)
         if strRole == "Editor" or strRole == "Admin":
-            serializer = UserTableSerializer(data=request.data, many=True)
+            serializer = UserInsertTableSerializer(data=request.data, many=True)
             serializer.is_valid(raise_exception=True)
             self.perform_create(serializer)
             return Response(serializer.data, status=status.HTTP_200_OK)
