@@ -12,6 +12,7 @@ urlpatterns = [
 
     path('reservation/<int:reservation_id>', reservationsClass.as_view()),
     path('reservation/', reservationsClass.as_view()),
+    path('reservation/<str:emailSearch>', reservationsClass.as_view()),
     path('confirmReservation/', reservationTransfer.as_view()),
     path('pendingReservations/', pendingReservation),
     path('clearReservations/', clearAllreservations),

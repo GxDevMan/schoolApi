@@ -704,12 +704,21 @@ class reservationsClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins
     queryset = ReservationTable.objects.all()
     roleLookup = roleClassify()
     lookup_field = 'reservation_id'
+    clearLogs_lookup_field = 'clearLogs'
+    clearLogs_lookup_url_kwarg = 'clearLogs'
+    emailSearch_lookup_field = 'emailSearch'
+    emailSearch_lookup_url_kwarg = 'emailSearch'
 
-    def get(self, request, reservation_id=None):
+
+    def get(self, request, reservation_id=None, emailSearch=None):
         strRole = self.getRole(request)
         if strRole == "Editor" or strRole == "Admin":
             if reservation_id:
                 queryset = self.get_queryset().filter(reservation_id=reservation_id)
+                serializer = specialReservationSerializer(queryset, many=True)
+                return Response(serializer.data)
+            if emailSearch:
+                queryset = self.get_queryset().filter(email=emailSearch)
                 serializer = specialReservationSerializer(queryset, many=True)
                 return Response(serializer.data)
             else:
