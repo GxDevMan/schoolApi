@@ -1,4 +1,3 @@
-import pytz
 from django.utils import timezone
 
 from django.db import models
@@ -27,7 +26,6 @@ class UserTable(models.Model):
     def save(self, *args, **kwargs):
         if self.user_password:
             self.user_password = PBKDF2PasswordHasher().encode(self.user_password, PBKDF2PasswordHasher().salt())
-
         super().save(*args, **kwargs)
 
 

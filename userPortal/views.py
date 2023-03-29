@@ -108,7 +108,6 @@ def clearAllreservations(request):
 @permission_classes([sessionCustomAuthentication])
 def viewItemsthatCanBeReserved(request):
     if request.method == 'GET':
-        getRole = roleClassify()
         today = timezone.now().today()
         query = InventoryTable.objects.filter(
             ~Q(item_code__in=ReservationTable.objects.filter(date_of_expiration__gte=today).filter(claim=0).values_list('item_code', flat=True)) &
@@ -365,7 +364,7 @@ class CategoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Upd
 
     def delete(self, request, category_id=None):
         strRole = self.getRole(request)
-        if strRole == "Editor" or strRole == "Admin":
+        if strRole == "Editor":
             return self.destroy(request, category_id)
         else:
             return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
@@ -442,7 +441,7 @@ class InventoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Up
 
     def delete(self, request, item_code=None):
         strRole = self.getRole(request)
-        if strRole == "Editor" or strRole == "Admin":
+        if strRole == "Editor":
             return self.destroy(request, item_code)
         else:
             return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
@@ -542,7 +541,7 @@ class HistoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Upda
     return_lookup_field = 'returnItems'
     return_lookup_url_kwarg = 'returnItems'
 
-    def get(self, request, history_id=None, start_date=None, end_date=None):
+    def get(self, request, history_id=None, start_date=None, end_date=None, returnItems=None):
         strRole = self.getRole(request)
         if strRole == "Admin" or strRole == "Editor":
             if history_id:
@@ -558,6 +557,9 @@ class HistoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Upda
                     'email')
                 serializer = specialHistoryReportSerializer(filteredData, many=True)
                 return Response(serializer.data, status=status.HTTP_200_OK)
+            if returnItems:
+                serializer = specialHistorySerializer(self.get_queryset().order_by('date_out').filter(date_out__isnull=True), many=True)
+                return Response(serializer.data)
             else:
                 serializer = specialHistorySerializer(self.get_queryset().order_by('date_out'), many=True)
                 return Response(serializer.data)
@@ -597,7 +599,7 @@ class HistoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Upda
                     try:
                         today = timezone.now()
                         selectedHistory = HistoryTable.objects.get(history_id=eachData['history_id'])
-                        selectedHistory.notes = "lost"
+                        selectedHistory.notes = "Lost"
                         selectedHistory.date_out = today
 
 
@@ -656,7 +658,11 @@ class HistoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Upda
         return decision
 
     def delete(self, request, history_id=None):
-        return self.destroy(request, history_id)
+        strRole = self.getRole(request)
+        if strRole == "Editor":
+            return self.destroy(request, history_id)
+        else:
+            return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
 
     def getRole(self, request):
         try:
@@ -686,7 +692,6 @@ class reservationsClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins
             return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
 
     def post(self, request):
-        print(request.data['item_code'])
         serializer = specialInsertReservationSerializer(data=request.data, many=True)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer, request)
@@ -705,7 +710,7 @@ class reservationsClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins
 
     def perform_create(self, serializer,request):
         today = timezone.now().today()
-        item_code = request.data['item_code']
+        item_code = request.data[0]['item_code']
         condition1 = InventoryTable.objects.filter(
             ~Q(item_code__in=ReservationTable.objects.filter(date_of_expiration__gte=today).filter(claim=0).values_list(
                 'item_code', flat=True)) & ~Q(item_code__in=HistoryTable.objects.filter(date_out__isnull=True).values_list('item_code', flat=True))).filter(item_code=item_code).filter(status="Available").select_related('category')
@@ -723,7 +728,6 @@ class reservationsClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins
             return ""
 
 #special classes
-
 class specificHistoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixins.RetrieveModelMixin, mixins.ListModelMixin):
     permission_classes = [sessionCustomAuthentication]
     serializer_class = specificUserHistorySerializer
@@ -732,8 +736,6 @@ class specificHistoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mix
 
     #Change to get request in production
     def post(self, request):
-        strRole = self.getRole(request)
-
         #GET THE EMAIL FROM THE SESSION IN PRODUCTION
         email = request.data['email']
         serializer = specificUserHistorySerializer(self.get_queryset().order_by('date_out').filter(email=email).filter(date_out__isnull=False), many=True)

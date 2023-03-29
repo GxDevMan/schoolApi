@@ -67,7 +67,7 @@ class CorsMiddleware:
         # Set the Access-Control-Allow-Origin header to the domain of the incoming request
         origin = request.headers.get('Origin')
         response['Access-Control-Allow-Origin'] = origin
-        response['Access-Control-Allow-Headers'] = 'sessionid, content-type'
+        response['Access-Control-Allow-Headers'] = 'content-type'
 
         # Allow credentials to be sent with the request
         response['Access-Control-Allow-Credentials'] = 'true'
