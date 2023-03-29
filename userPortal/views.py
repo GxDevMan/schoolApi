@@ -394,17 +394,6 @@ class InventoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Up
         else:
             return Response({'message':'Unauthorized'}, status=status.HTTP_200_OK)
 
-    def update(self, request, item_code):
-        item = InventoryTable.objects.get(item_code=item_code)
-        item.condition = request.data['item_condition']
-        if item.condition == "Working":
-            item.status = "Available"
-        item.item_name = request.data['item_name']
-        category = CategoryTable.objects.get(category_id=request.data['category'])
-        item.category = category
-        item.save()
-
-
     def get(self, request, item_code=None, filter=None):
         strRole = self.getRole(request)
         if strRole == "Editor" or strRole == "Admin":
