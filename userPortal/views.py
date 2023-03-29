@@ -612,7 +612,7 @@ class HistoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Upda
                 itemLostcount = 0
                 for eachData in data:
                     try:
-                        today = timezone.now()
+                        today = timezone.now().today()
                         selectedHistory = HistoryTable.objects.get(history_id=eachData['history_id'])
                         selectedHistory.notes = "Lost"
                         selectedHistory.date_out = today
