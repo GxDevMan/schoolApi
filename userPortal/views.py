@@ -540,6 +540,8 @@ class HistoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Upda
     lost_lookup_url_kwarg = 'lost'
     return_lookup_field = 'returnItems'
     return_lookup_url_kwarg = 'returnItems'
+    clearLogs_lookup_field = 'clearLogs'
+    clearLogs_lookup_url_kwarg = 'clearLogs'
 
     def get(self, request, history_id=None, start_date=None, end_date=None, returnItems=None):
         strRole = self.getRole(request)
@@ -677,10 +679,14 @@ class HistoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Upda
         decision = condition1.exists() and condition2.exists()
         return decision
 
-    def delete(self, request, history_id=None):
+    def delete(self, request, history_id=None, clearLogs=None):
         strRole = self.getRole(request)
         if strRole == "Editor":
-            return self.destroy(request, history_id)
+            if history_id:
+                return self.destroy(request, history_id)
+            if clearLogs:
+                HistoryTable.objects.all().delete()
+                return Response({'message': 'history logs deleted'}, status=status.HTTP_200_OK)
         else:
             return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
 
