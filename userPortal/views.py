@@ -694,7 +694,7 @@ class reservationsClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins
     def post(self, request):
         serializer = specialInsertReservationSerializer(data=request.data, many=True)
         serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer, request)
+        self.perform_create(request)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
@@ -708,17 +708,27 @@ class reservationsClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins
     def delete(self, request, reservation_id=None):
         return self.destroy(request, reservation_id)
 
-    def perform_create(self, serializer,request):
+    def perform_create(self, request):
         today = timezone.now().today()
-        item_code = request.data[0]['item_code']
-        condition1 = InventoryTable.objects.filter(
-            ~Q(item_code__in=ReservationTable.objects.filter(date_of_expiration__gte=today).filter(claim=0).values_list(
-                'item_code', flat=True)) & ~Q(item_code__in=HistoryTable.objects.filter(date_out__isnull=True).values_list('item_code', flat=True))).filter(item_code=item_code).filter(status="Available").select_related('category')
-        condition2 = InventoryTable.objects.filter(status="Available").filter(item_code=item_code)
-        if condition1.exists() and condition2.exists():
-            serializer.save()
-        else:
-            pass
+        data = request.data
+        for eachData in data:
+            item_code = eachData['item_code']
+            email = eachData['email']
+            condition1 = InventoryTable.objects.filter(
+                ~Q(item_code__in=ReservationTable.objects.filter(date_of_expiration__gte=today).filter(claim=0).values_list(
+                    'item_code', flat=True)) & ~Q(item_code__in=HistoryTable.objects.filter(date_out__isnull=True).values_list('item_code', flat=True))).filter(item_code=item_code).filter(status="Available").select_related('category')
+            condition2 = InventoryTable.objects.filter(status="Available").filter(item_code=item_code)
+            if condition1.exists() and condition2.exists():
+                user = UserTable.objects.get(email=email)
+                item = InventoryTable.objects.get(item_code=item_code)
+                reservation = ReservationTable.objects.create(
+                    email=user,
+                    item_code=item,
+                    claim=0
+                )
+                reservation.save()
+            else:
+                pass
 
     def getRole(self, request):
         try:
