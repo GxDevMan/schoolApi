@@ -3,6 +3,7 @@ from django.contrib.sessions.backends.db import SessionStore
 from django.contrib.sessions.models import Session
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
+from datetime import timedelta
 from .backends import sessionCustomAuthentication
 from .backends import roleClassify
 from django.utils import timezone
@@ -555,7 +556,7 @@ class HistoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Upda
                 endingDate = self.dateConversion.dateFormattoYYMMDD(end_date)
 
                 filteredData = HistoryTable.objects.filter(date_out__isnull=False).filter(
-                    date_out__range=(startingDate, endingDate)).select_related('item_code__category').select_related(
+                    date_out__range=(startingDate, endingDate + timedelta(days=1))).select_related('item_code__category').select_related(
                     'email')
                 serializer = specialHistoryReportSerializer(filteredData, many=True)
                 return Response(serializer.data, status=status.HTTP_200_OK)
