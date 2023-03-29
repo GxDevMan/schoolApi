@@ -86,8 +86,8 @@ class ReservationTable(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        stringZ = "{item} : {email} : {name} : Expiration - {datetime}"
-        return stringZ.format(item=self.item_code.item_name, email=self.email.email, name=(self.email.first_name + " " + self.email.last_name), datetime=self.date_of_expiration)
+        stringZ = "{reservation_id}: {item} : {email} : {name} : Expiration - {datetime}"
+        return stringZ.format(reservation_id=self.reservation_id,item=self.item_code.item_name, email=self.email.email, name=(self.email.first_name + " " + self.email.last_name), datetime=self.date_of_expiration)
 
     class Meta:
         managed = False
