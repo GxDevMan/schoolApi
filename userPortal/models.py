@@ -108,13 +108,13 @@ class HistoryTable(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.due_date:
-            today = timezone.now()
+            today = timezone.now().today()
             self.due_date = today
         if not self.date_in:
-            today = timezone.now()
+            today = timezone.now().today()
             self.date_in = today
         if not self.due_date:
-            today = timezone.now()
+            today = timezone.now().today()
             self.due_date = today
         if not self.notes:
             self.notes = "N/A"

@@ -625,13 +625,33 @@ class HistoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Upda
             count = 0
             for eachData in data:
                 email = eachData['email']
+                if not email:
+                    email = request.session['email']
                 item_code = eachData['item_code']
-                date_in = eachData['date_in']
-                date_out = eachData['date_out']
-                due_date = eachData['due_date']
-                notes = eachData['notes']
 
+                date_in = None
+                try:
+                    date_in = eachData['date_in']
+                except:
+                    pass
 
+                date_out = None
+                try:
+                    date_out = eachData['date_out']
+                except:
+                    pass
+
+                due_date = None
+                try:
+                    due_date = eachData['due_date']
+                except:
+                    pass
+
+                notes = None
+                try:
+                    notes = eachData['notes']
+                except:
+                    pass
                 user = UserTable.objects.get(email=email)
                 item = InventoryTable.objects.get(item_code=item_code)
 
