@@ -394,12 +394,24 @@ class InventoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Up
         else:
             return Response({'message':'Unauthorized'}, status=status.HTTP_200_OK)
 
+    def update(self, request, item_code):
+        item = InventoryTable.objects.get(item_code=item_code)
+        item.condition = request.data['item_condition']
+        if item.condition == "Working":
+            item.status = "Available"
+        item.item_name = request.data['item_name']
+        category = CategoryTable.objects.get(category_id=request.data['category'])
+        item.category = category
+        item.save()
+
+
     def get(self, request, item_code=None, filter=None):
         strRole = self.getRole(request)
         if strRole == "Editor" or strRole == "Admin":
             if item_code is not None:
                 queryset = self.get_queryset().filter(item_code=item_code)
                 serializer = specialInventorySerializer(queryset, many=True)
+
                 response = Response(serializer.data)
                 return response
 
@@ -544,7 +556,7 @@ class HistoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Upda
     clearLogs_lookup_field = 'clearLogs'
     clearLogs_lookup_url_kwarg = 'clearLogs'
 
-    def get(self, request, history_id=None, start_date=None, end_date=None, returnItems=None):
+    def get(self, request, history_id=None, start_date=None, end_date=None, returnItems=None, dateOutNull=None):
         strRole = self.getRole(request)
         if strRole == "Admin" or strRole == "Editor":
             if history_id:
@@ -579,14 +591,14 @@ class HistoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Upda
                 itemsReturned = 0
                 for eachData in data:
                     try:
-                        today = timezone.now()
+                        today = timezone.now().today()
                         selectedHistory = HistoryTable.objects.get(history_id=eachData['history_id'])
                         if selectedHistory.date_out is None:
-                            note = eachData['notes']
-                            if note == "":
-                                selectedHistory.notes = "No Comment"
-                            else:
-                                selectedHistory.notes = note
+                            note = ''
+                            try:
+                                note = eachData['notes']
+                            except:
+                                pass
                             selectedHistory.date_out = today
                             itemsReturned += 1
                             selectedHistory.save()
@@ -832,7 +844,11 @@ class reservationTransfer(generics.GenericAPIView, mixins.CreateModelMixin, mixi
                 selectedReserve = ReservationTable.objects.filter(reservation_id=reservationId).filter(claim=False).filter(date_of_expiration__gte=today_str)
                 email = eachData['email']
                 item_code = eachData['item_code']
-                notes = eachData['notes']
+                notes = ''
+                try:
+                    notes = eachData['notes']
+                except:
+                    pass
 
                 user = UserTable.objects.get(email=email)
                 item = InventoryTable.objects.get(item_code=item_code)
