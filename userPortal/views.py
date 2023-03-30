@@ -27,61 +27,14 @@ from .serializers import \
 from rest_framework import generics, status
 from rest_framework import mixins
 from .backends import convertDate
-import datetime
-
-#function based
-# @api_view(['GET'])
-# def returnListofRoles(request):
-#     if request.method == 'GET':
-#         try:
-#             db_conn = connections['default']
-#         except:
-#             response = "failed"
-#             return Response(response)
-#
-#         cursor = db_conn.cursor()
-#         cursor.execute("SELECT * FROM schooldb.role_table")
-#         roles = []
-#
-#         for row in cursor.fetchall():
-#             Role1 = RoleTable(role_id=row[0], role_name=row[1])
-#             roles.append(Role1)
-#
-#         querySet = RoleTable.objects.bulk_create(roles, ignore_conflicts=True)
-#
-#         data = []
-#
-#         for Role2 in querySet:
-#             data.append(
-#                 {
-#                     'role_id': Role2.role_id,
-#                     'role_name': Role2.role_name
-#                 }
-#             )
-#         return Response(data)
-
-#DEPRECIATED
-# @api_view(['GET'])
-# @permission_classes([sessionCustomAuthentication])
-# def historyReport(request):
-#     if request.method == 'GET':
-#         getRole = roleClassify()
-#         strRole = getRole.roleReturn(request)
-#         if strRole == "Admin" or strRole == "Editor":
-#             filteredData = HistoryTable.objects.filter(date_out__isnull=False).filter(date_out__lte=datetime.datetime.today()).select_related('item_code__category').select_related('email')
-#             serializer = specialHistoryReportSerializer(filteredData, many=True)
-#             return Response(serializer.data, status=status.HTTP_200_OK)
-#         else:
-#             return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
 
 @api_view(['GET'])
 @permission_classes([sessionCustomAuthentication])
 def pendingReservation(request):
     if request.method == 'GET':
         try:
-            email = request.session['email']
             today = timezone.now().today()
-            filteredData = ReservationTable.objects.filter(email=email).filter(claim=0).filter(date_of_expiration__gte=today).select_related('item_code')
+            filteredData = ReservationTable.objects.filter(claim=0).filter(date_of_expiration__gte=today).select_related('item_code')
             serializer = pendingReservationSerializer(filteredData, many=True)
             return Response(serializer.data)
         except:
@@ -122,9 +75,8 @@ def viewItemsthatCanBeReserved(request):
 def updatePass(request):
     if request.method == 'PUT':
         try:
-            #password = request.data['user_password'] new password
-
-            sessionemail = request.data['email'] # <--- for testing ONLY
+            # sessionemail = request.data['email'] # <--- for testing ONLY
+            sessionemail = request.session['email']
             old_password = request.data['old_password']
 
             new_password = request.data['new_password']
@@ -191,6 +143,7 @@ def testFunction(request):
     if request.method == 'GET':
 
         try:
+            pass
             # SID = os.getenv('TWILIO_SID')
             # auth = os.getenv('TWILIO_AUTH')
             # client = Client(SID, auth)
@@ -201,29 +154,6 @@ def testFunction(request):
             #     to='+639672945681'
             # )
             # print(message.sid)
-
-            pass
-            # <year>-<month>-<day>-<hour>-<minute>-<second>-<microsecond>
-            # print(request.GET.get('start_date'))
-            # print(request.GET.get('end_date'))
-            #
-            # start_date = datetime.datetime(2021, 1, 20, 20, 8, 7, 127325, tzinfo=pytz.UTC)
-            # end_date = datetime.datetime(2024, 3, 20, 20, 8, 7, 127325, tzinfo=pytz.UTC)
-            #
-            # queryset = HistoryTable.objects.filter(date_out__range=(start_date, end_date)).order_by('-date_out')
-            # data = HistorySerializer(queryset, many=True).data
-            #
-            # print(request.session['email'])
-            # print(request.session['role'])
-            # return Response(data)
-            # today = datetime.datetime.today()
-            # testQuery = InventoryTable.objects.filter(
-            #     ~Q(item_code__in=ReservationTable.objects.filter(date_of_expiration__gte=today).filter(
-            #         claim=0).values_list('item_code', flat=True)) & ~Q(item_code__in=HistoryTable.objects.filter(date_out__isnull=True).values_list('item_code', flat=True))).filter(status="Available").select_related('category')
-            # siftedData = list(
-            #     testQuery.values('item_code', 'item_name', 'item_condition', 'status', 'category__category_name'))
-            # return Response(siftedData)
-
         except Exception as e:
             print(e)
             return Response({'error':'Internal Error'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -237,10 +167,8 @@ def textPeople(request):
         query = HistoryTable.objects.filter(date_out__isnull=True).filter(due_date__lt=today)
         serializer = textPeopleFindSerializer(query, many=True)
         data = serializer.data
-
         for i in data:
             print(i['email']['phone_number'])
-
         return Response(serializer.data)
 
 #authenticate
@@ -250,20 +178,17 @@ class LoginPoint(APIView):
         password = request.data['password']
         user = authenticate(request, email=email, password=password)
         if user is not None:
-            session = SessionStore()
-
-            session['email'] = email
-            session['role'] = user.role_id
-            request.session['email'] = email #testing only
-            session.create()
-
+            # session = SessionStore()
+            # session['email'] = email
+            # session['role'] = user.role_id
+            # session.create()
+            request.session['email'] = user.email
+            request.session['role'] = user.role.role_name
             queryset = RoleTable.objects.filter(role_id=user.role_id)
             serializer = RoleTableSerializer(queryset, many=True)
 
             response = Response({"message": "Login successful.",
-                                 "role": serializer.data[0]['role_name'],
-                                 "sessionid": session.session_key}, status.HTTP_200_OK)
-            response.set_cookie('sessionid', session.session_key, httponly=True)
+                                 "role": user.role.role_name}, status.HTTP_200_OK)
             return response
         else:
             return Response({'error':'Unauthorized'},status=status.HTTP_401_UNAUTHORIZED)
@@ -484,7 +409,7 @@ class UsersClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Update
 
     def put(self, request, email=None):
         strRole = self.getRole(request)
-        if strRole == "Editor" or strRole == "Admin":
+        if strRole == "Editor":
             user = UserTable.objects.get(email=email)
             try:
                 user.phone_number = request.data['phone_number']
@@ -545,7 +470,7 @@ class HistoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Upda
     clearLogs_lookup_field = 'clearLogs'
     clearLogs_lookup_url_kwarg = 'clearLogs'
 
-    def get(self, request, history_id=None, start_date=None, end_date=None, returnItems=None, dateOutNull=None):
+    def get(self, request, history_id=None, start_date=None, end_date=None, returnItems=None):
         strRole = self.getRole(request)
         if strRole == "Admin" or strRole == "Editor":
             if history_id:
@@ -583,12 +508,13 @@ class HistoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Upda
                         today = timezone.now().today()
                         selectedHistory = HistoryTable.objects.get(history_id=eachData['history_id'])
                         if selectedHistory.date_out is None:
-                            note = ''
+                            note = None
                             try:
                                 note = eachData['notes']
                             except:
                                 pass
                             selectedHistory.date_out = today
+                            selectedHistory.notes = note
                             itemsReturned += 1
                             selectedHistory.save()
                     except:
@@ -606,10 +532,8 @@ class HistoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Upda
                         selectedHistory.notes = "Lost"
                         selectedHistory.date_out = today
 
-
                         selectedItem = InventoryTable.objects.get(item_code=selectedHistory.item_code.item_code)
                         selectedItem.item_condition = "Lost"
-                        selectedItem.status = "Unavailable"
 
                         selectedItem.save()
                         selectedHistory.save()
@@ -781,10 +705,9 @@ class specificHistoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mix
     queryset = HistoryTable.objects.all()
     roleLookup = roleClassify()
 
-    #Change to get request in production
+    #Change to get request in production inform front end first before changing to
     def post(self, request):
-        #GET THE EMAIL FROM THE SESSION IN PRODUCTION
-        email = request.data['email']
+        email = request.session['email']
         serializer = specificUserHistorySerializer(self.get_queryset().order_by('date_out').filter(email=email).filter(date_out__isnull=False), many=True)
         return Response(serializer.data)
 
@@ -803,8 +726,7 @@ class specificReservationClass(generics.GenericAPIView, mixins.CreateModelMixin,
 
     #Change to get request in production
     def post(self, request):
-        #GET THE EMAIL FROM THE SESSION IN PRODUCTION
-        email = request.data['email']
+        email = request.session['email']
         serializer = self.get_serializer(self.get_queryset().order_by('-date_of_expiration').filter(email=email), many=True)
         return Response(serializer.data)
 
@@ -859,4 +781,3 @@ class reservationTransfer(generics.GenericAPIView, mixins.CreateModelMixin, mixi
             return lookUpRole
         except:
             return ""
-

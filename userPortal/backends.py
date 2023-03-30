@@ -1,37 +1,31 @@
+import os
 from datetime import date
 from django.contrib.auth.backends import BaseBackend
 from django.contrib.sessions.backends.db import SessionStore
 from userPortal.models import UserTable
 from django.contrib.auth.hashers import PBKDF2PasswordHasher
 from rest_framework.permissions import IsAuthenticated
-from .models import RoleTable
+from django.conf import settings
 
 class roleClassify():
     def roleReturn(self, request):
-        return "Editor" #Remove This in Production
-        sessionHeader = request.META.get('HTTP_SESSIONID')
-        session = SessionStore(session_key=sessionHeader)
-        role = session['role']
-        selectedRole = RoleTable.objects.get(role_id=role)
-        return selectedRole.role_name
+        debug = settings.DEBUG
+        if debug:
+            return "Editor"
+        # sessionHeader = request.META.get('HTTP_SESSIONID')
+        # session = SessionStore(session_key=sessionHeader)
+        role = request.session['role']
+        return role
 
 class sessionCustomAuthentication(IsAuthenticated):
     def has_permission(self, request, view):
         try:
-            return True #Remove This IN PRODUCTION
-            sessionHeader = request.META.get('HTTP_SESSIONID')
-            session = SessionStore(session_key=sessionHeader)
-            email = session['email']
-            return True
-        except:
-            print("failed")
-            return False
-
-class sessionCustomAuthenticationTesting(IsAuthenticated):
-    def has_permission(self, request, view):
-        try:
+            debug = settings.DEBUG
+            if debug:
+                return True
+            # sessionHeader = request.META.get('HTTP_SESSIONID')
+            # session = SessionStore(session_key=sessionHeader)
             email = request.session['email']
-            print(email)
             return True
         except:
             print("failed")
@@ -49,7 +43,6 @@ class userAuth(BaseBackend):
                 return None
         except UserTable.DoesNotExist:
             return None
-
 
     def get_user(self, user_id):
         try:

@@ -66,6 +66,14 @@ class InventoryTable(models.Model):
         managed = False
         db_table = 'inventory_table'
 
+    def save(self, *args, **kwargs):
+        if self.item_condition == "Working":
+            self.status = "Available"
+        else:
+            self.status = "Unavailable"
+        super().save(*args, **kwargs)
+
+
 class ReservationTable(models.Model):
     reservation_id = models.AutoField(primary_key=True)
     email = models.ForeignKey('UserTable', on_delete=models.CASCADE, db_column='email')
