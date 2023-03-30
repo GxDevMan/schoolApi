@@ -730,12 +730,37 @@ class specificReservationClass(generics.GenericAPIView, mixins.CreateModelMixin,
         serializer = self.get_serializer(self.get_queryset().order_by('-date_of_expiration').filter(email=email), many=True)
         return Response(serializer.data)
 
-    def getRole(self, request):
-        try:
-            lookUpRole = self.roleLookup.roleReturn(request)
-            return lookUpRole
-        except:
-            return ""
+class specificUserreservationsClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixins.RetrieveModelMixin, mixins.ListModelMixin):
+    permission_classes = [sessionCustomAuthentication]
+    serializer_class = ReservationSerializer
+    queryset = ReservationTable.objects.all()
+    roleLookup = roleClassify()
+
+    def post(self, request):
+        data = request.data
+        email = request.session['email']
+        for eachData in data:
+            item_code = eachData['item_code']
+            user = UserTable.objects.get(email=email)
+            item = InventoryTable.objects.get(item_code=item_code)
+            if self.performCheck(item_code):
+                reserve = ReservationTable.objects.create(
+                    email=user,
+                    item_code=item,
+                    claim=0,
+                )
+                reserve.save()
+        return Response({'message':'items successfully reserved'}, status=status.HTTP_200_OK)
+
+    def performCheck(self, item_code):
+        today = timezone.now().today()
+        condition1 = InventoryTable.objects.filter(
+            ~Q(item_code__in=ReservationTable.objects.filter(date_of_expiration__gte=today).filter(claim=0).values_list(
+                'item_code', flat=True)) & ~Q(item_code__in=HistoryTable.objects.filter(date_out__isnull=True).values_list('item_code',flat=True))).filter(
+            item_code=item_code).filter(status="Available").select_related('category')
+        condition2 = InventoryTable.objects.filter(status="Available").filter(item_code=item_code)
+        decision = condition1.exists() and condition2.exists()
+        return decision
 
 class reservationTransfer(generics.GenericAPIView, mixins.CreateModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixins.RetrieveModelMixin, mixins.ListModelMixin):
     permission_classes = [sessionCustomAuthentication]
