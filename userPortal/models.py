@@ -1,8 +1,6 @@
 from django.utils import timezone
-
 from django.db import models
 from django.contrib.auth.hashers import PBKDF2PasswordHasher
-#db
 
 class RoleTable(models.Model):
     role_id = models.AutoField(primary_key=True)
@@ -128,9 +126,6 @@ class HistoryTable(models.Model):
             self.notes = "N/A"
         super().save(*args, **kwargs)
 
-
     def __str__(self):
         formatString = "{historyId} : {item} : {email} : {name} : {datetime}"
         return formatString.format(historyId=self.history_id, item=self.item_code.item_name, email=self.email.email, name=(self.email.first_name + " " + self.email.last_name), datetime=self.date_out)
-
-

@@ -81,11 +81,6 @@ class specialReservationSerializer(serializers.ModelSerializer):
         model = ReservationTable
         fields = '__all__'
 
-class specialInsertReservationSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ReservationTable
-        fields = ['email','item_code','claim']
-
 class numberOnlyUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserTable

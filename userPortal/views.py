@@ -1,15 +1,15 @@
+from userPortal.logic.historyLogic import historyLogic
 from django.contrib.auth import authenticate
-from django.contrib.sessions.backends.db import SessionStore
-from django.contrib.sessions.models import Session
-from django.shortcuts import get_object_or_404
+from .logic import functionLogic
 from django.db.models import Q
-from datetime import timedelta
+from .logic.reservationLogic import reservationLogic
 from .backends import sessionCustomAuthentication
 from .backends import roleClassify
 from django.utils import timezone
 from rest_framework.response import Response
 from .models import UserTable, InventoryTable, ReservationTable, CategoryTable
 from .models import RoleTable, HistoryTable
+from django.conf import settings
 from rest_framework.decorators import api_view, APIView, permission_classes
 from .serializers import \
     UserTableSerializer, \
@@ -18,124 +18,49 @@ from .serializers import \
     ReservationSerializer, \
     CategorySerializer, \
     HistorySerializer, \
-    changePassSerializer, \
-    specialInventorySerializer, pendingReservationSerializer, specialHistorySerializer, \
-    multipleItemInsertSerializer, specialHistoryReportSerializer, specialReservationSerializer, \
-    multipleItemUpdateSerializer, specialInsertReservationSerializer, \
+    specialInventorySerializer, specialHistorySerializer, \
+    multipleItemInsertSerializer, specialReservationSerializer, \
+    multipleItemUpdateSerializer, \
     textPeopleFindSerializer, specificUserHistorySerializer, specificUserReservationSerializer, \
     UserInsertTableSerializer
 from rest_framework import generics, status
 from rest_framework import mixins
-from .backends import convertDate
 
 @api_view(['GET'])
 @permission_classes([sessionCustomAuthentication])
 def pendingReservation(request):
     if request.method == 'GET':
-        try:
-            today = timezone.now().today()
-            filteredData = ReservationTable.objects.filter(claim=0).filter(date_of_expiration__gte=today).select_related('item_code')
-            serializer = pendingReservationSerializer(filteredData, many=True)
-            return Response(serializer.data)
-        except:
-            return Response({'message':'exception type'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return functionLogic.getPendingreservation()
 
 @api_view(['DELETE'])
 @permission_classes([sessionCustomAuthentication])
 def clearAllreservations(request):
     if request.method == 'DELETE':
-        getRole = roleClassify()
-        strRole = getRole.roleReturn(request)
-        if strRole == "Editor":
-            try:
-                today = timezone.now().today()
-                filteredData = ReservationTable.objects.filter(Q(claim=1) | Q(date_of_expiration__lt=today))
-                filteredData.delete()
-                return Response({'Message': 'Unecessarry reservations deleted'})
-            except:
-                return Response({'Message': 'Exception Occured'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        else:
-            return Response({'message': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
-
+        return functionLogic.clearReserveTable(request)
 
 @api_view(['GET'])
 @permission_classes([sessionCustomAuthentication])
 def viewItemsthatCanBeReserved(request):
     if request.method == 'GET':
-        today = timezone.now().today()
-        query = InventoryTable.objects.filter(
-            ~Q(item_code__in=ReservationTable.objects.filter(date_of_expiration__gte=today).filter(claim=0).values_list('item_code', flat=True)) &
-            ~Q(item_code__in=HistoryTable.objects.filter(date_out__isnull=True).values_list('item_code',flat=True))).filter(status="Available").select_related('category')
-        serializer = specialInventorySerializer(query, many=True)
-        return Response(serializer.data)
-    return Response(status=status.HTTP_400_BAD_REQUEST)
+        return functionLogic.returnItemsviewReserve()
 
 @api_view(['PUT'])
 @permission_classes([sessionCustomAuthentication])
 def updatePass(request):
     if request.method == 'PUT':
-        try:
-            # sessionemail = request.data['email'] # <--- for testing ONLY
-            sessionemail = request.session['email']
-            old_password = request.data['old_password']
-
-            new_password = request.data['new_password']
-            new_password2 = request.data['user_password']
-
-            if new_password != new_password2:
-                return Response({'message':'password does not match'}, status=status.HTTP_409_CONFLICT)
-
-            selectedData = get_object_or_404(UserTable, email=sessionemail)
-            user = authenticate(request, email=sessionemail, password=old_password)
-            if user and new_password2 == old_password:
-                return Response({'message': 'New password matches old password'}, status=status.HTTP_400_BAD_REQUEST)
-
-            if user is not None:
-                serializer = changePassSerializer(selectedData, request.data)
-                if serializer.is_valid():
-                    serializer.save()
-                    return Response({'message': 'password successfully changed'})
-            else:
-                return Response({'error': 'password does not match the old password'}, status=status.HTTP_404_NOT_FOUND)
-        except:
-            return Response({'message': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
+        return functionLogic.loggedInUpdatePass(request)
 
 @api_view(['PUT'])
 @permission_classes([sessionCustomAuthentication])
 def editorResetPass(request):
     if request.method == 'PUT':
-        try:
-            getRole = roleClassify()
-            strRole = getRole.roleReturn(request)
-            if strRole == "Editor":
-                selectedEmail = request.data['email']
-                query = UserTable.objects.get(email=selectedEmail)
-                query.user_password = query.email
-                query.save()
-                return Response({'message': 'User Password Reset to user email'}, status=status.HTTP_200_OK)
-            else:
-                return Response({'message': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
-        except:
-            return Response({'message': 'Failed to reset Password'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return functionLogic.targetEmailPasswordresetToEmail(request)
 
 @api_view(['PUT'])
 @permission_classes([sessionCustomAuthentication])
 def editorChangePass(request):
     if request.method == 'PUT':
-        try:
-            getRole = roleClassify()
-            strRole = getRole.roleReturn(request)
-            if strRole == "Editor":
-                selectedEmail = request.data['email']
-                passwordInput = request.data['password']
-                query = UserTable.objects.get(email=selectedEmail)
-                query.user_password = passwordInput
-                query.save()
-                return Response({'message': 'password set'}, status=status.HTTP_200_OK)
-            else:
-                return Response({'message': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
-        except:
-            return Response({'message': 'Failed to reset Password'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return functionLogic.targetEmailSetPassword(request)
 
 
 @api_view(['GET'])
@@ -178,18 +103,9 @@ class LoginPoint(APIView):
         password = request.data['password']
         user = authenticate(request, email=email, password=password)
         if user is not None:
-            # session = SessionStore()
-            # session['email'] = email
-            # session['role'] = user.role_id
-            # session.create()
             request.session['email'] = user.email
             request.session['role'] = user.role.role_name
-            queryset = RoleTable.objects.filter(role_id=user.role_id)
-            serializer = RoleTableSerializer(queryset, many=True)
-
-            response = Response({"message": "Login successful.",
-                                 "role": user.role.role_name}, status.HTTP_200_OK)
-            return response
+            return Response({"message": "Login successful.","role": user.role.role_name}, status.HTTP_200_OK)
         else:
             return Response({'error':'Unauthorized'},status=status.HTTP_401_UNAUTHORIZED)
 
@@ -198,7 +114,8 @@ class LogoutPoint(APIView):
     def delete(self, request, format=None):
         try:
             request.session.delete()
-            return Response(status=status.HTTP_200_OK)
+            response = Response(status=status.HTTP_200_OK)
+            return response
         except KeyError:
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
@@ -209,10 +126,9 @@ def logoutAllUsers(request):
         getRole = roleClassify()
         strRole = getRole.roleReturn(request)
         if strRole == "Editor":
-            Session.objects.all().delete()
-            return Response({'Message': 'All Users Logged out'})
+            return functionLogic.sessionTableClear(request)
         else:
-            return Response({'message':'Unauthorized'},status=status.HTTP_401_UNAUTHORIZED)
+            return Response({'message': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
 
 #Class Based Views
 class countStatus(generics.GenericAPIView):
@@ -234,7 +150,6 @@ class countStatus(generics.GenericAPIView):
                     'damaged': damaged,
                     'lost': lost}
             return Response(data)
-
         else:
             return Response({'message':'UnAuthorized access'}, status=status.HTTP_403_FORBIDDEN)
 
@@ -247,7 +162,7 @@ class RoleClass(generics.GenericAPIView, mixins.ListModelMixin):
     roleLookup = roleClassify()
 
     def get(self, request):
-        strRole = self.getRole(request)
+        strRole = self.roleLookup.roleReturn(request)
         if strRole == "Editor" or strRole == "Admin":
             return self.list(request)
         else:
@@ -274,7 +189,7 @@ class CategoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Upd
             return self.list(request)
 
     def post(self, request):
-        strRole = self.getRole(request)
+        strRole = self.roleLookup.roleReturn(request)
         if strRole == "Editor" or strRole == "Admin":
             return self.create(request)
         else:
@@ -282,25 +197,19 @@ class CategoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Upd
 
 
     def put(self, request, category_id=None):
-        strRole = self.getRole(request)
+        strRole = self.roleLookup.roleReturn(request)
         if strRole == "Editor" or strRole == "Admin":
             return self.update(request, category_id)
         else:
             return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
 
     def delete(self, request, category_id=None):
-        strRole = self.getRole(request)
+        strRole = self.roleLookup.roleReturn(request)
         if strRole == "Editor":
             return self.destroy(request, category_id)
         else:
             return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
 
-    def getRole(self, request):
-        try:
-            lookUpRole = self.roleLookup.roleReturn(request)
-            return lookUpRole
-        except:
-            return ""
 
 class InventoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixins.RetrieveModelMixin, mixins.ListModelMixin):
     permission_classes = [sessionCustomAuthentication]
@@ -313,14 +222,14 @@ class InventoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Up
     serializer_class = InventoryTableSerializer
 
     def put(self, request, item_code=None):
-        strRole = self.getRole(request)
+        strRole = self.roleLookup.roleReturn(request)
         if strRole == "Editor" or strRole == "Admin":
             return self.update(request, item_code)
         else:
             return Response({'message':'Unauthorized'}, status=status.HTTP_200_OK)
 
     def get(self, request, item_code=None, filter=None):
-        strRole = self.getRole(request)
+        strRole = self.roleLookup.roleReturn(request)
         if strRole == "Editor" or strRole == "Admin":
             if item_code is not None:
                 queryset = self.get_queryset().filter(item_code=item_code)
@@ -342,9 +251,8 @@ class InventoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Up
             return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
 
     def post(self, request):
-        strRole = self.getRole(request)
+        strRole = self.roleLookup.roleReturn(request)
         if strRole == "Editor" or strRole == "Admin":
-            #note data sent should be in brackets
             serializer = multipleItemInsertSerializer(data=request.data, many=True)
             if serializer.is_valid(raise_exception=False):
                 self.perform_create(serializer)
@@ -355,7 +263,7 @@ class InventoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Up
             return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
 
     def patch(self, request):
-        strRole = self.getRole(request)
+        strRole = self.roleLookup.roleReturn(request)
         if strRole == "Editor" or strRole == "Admin":
             serializer = multipleItemUpdateSerializer(data=request.data, many=True)
             if serializer.is_valid():
@@ -367,18 +275,11 @@ class InventoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Up
             return Response({'message':'Unauthorized'}, status=status.HTTP_200_OK)
 
     def delete(self, request, item_code=None):
-        strRole = self.getRole(request)
+        strRole = self.roleLookup.roleReturn(request)
         if strRole == "Editor":
             return self.destroy(request, item_code)
         else:
             return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
-
-    def getRole(self, request):
-        try:
-            lookUpRole = self.roleLookup.roleReturn(request)
-            return lookUpRole
-        except:
-            return ""
 
 class UsersClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixins.RetrieveModelMixin, mixins.ListModelMixin):
     permission_classes = [sessionCustomAuthentication]
@@ -388,7 +289,7 @@ class UsersClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Update
     roleLookup = roleClassify()
 
     def get(self, request, email=None):
-        strRole = self.getRole(request)
+        strRole = self.roleLookup.roleReturn(request)
         if strRole == "Editor" or strRole == "Admin":
             if email:
                 return self.retrieve(request)
@@ -398,7 +299,7 @@ class UsersClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Update
             return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
 
     def post(self, request):
-        strRole = self.getRole(request)
+        strRole = self.roleLookup.roleReturn(request)
         if strRole == "Editor" or strRole == "Admin":
             serializer = UserInsertTableSerializer(data=request.data, many=True)
             serializer.is_valid(raise_exception=True)
@@ -408,7 +309,7 @@ class UsersClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Update
             return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
 
     def put(self, request, email=None):
-        strRole = self.getRole(request)
+        strRole = self.roleLookup.roleReturn(request)
         if strRole == "Editor":
             user = UserTable.objects.get(email=email)
             try:
@@ -425,7 +326,7 @@ class UsersClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Update
         return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
 
     def delete(self, request, email=None):
-        strRole = self.getRole(request)
+        strRole = self.roleLookup.roleReturn(request)
         if strRole == "Editor":
             if email:
                 return self.destroy(request, email)
@@ -440,23 +341,16 @@ class UsersClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Update
                     except:
                         pass
                 return Response({'message': 'Accounts Deleted',
-                                 'accounts_deleted': deletionCount}, status=status.HTTP_200_OK)
+                                 'accounts_deleted': str(deletionCount)}, status=status.HTTP_200_OK)
         else:
             return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
-
-    def getRole(self, request):
-        try:
-            lookUpRole = self.roleLookup.roleReturn(request)
-            return lookUpRole
-        except:
-            return ""
 
 class HistoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixins.RetrieveModelMixin, mixins.ListModelMixin):
     permission_classes = [sessionCustomAuthentication]
     serializer_class = HistorySerializer
     queryset = HistoryTable.objects.all()
     roleLookup = roleClassify()
-    dateConversion = convertDate()
+    historyBack = historyLogic()
     lookup_field = 'history_id'
     lookup_url_kwarg = 'history_id'
     startdate_lookup_field = 'start_date'
@@ -471,21 +365,12 @@ class HistoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Upda
     clearLogs_lookup_url_kwarg = 'clearLogs'
 
     def get(self, request, history_id=None, start_date=None, end_date=None, returnItems=None):
-        strRole = self.getRole(request)
+        strRole = self.roleLookup.roleReturn(request)
         if strRole == "Admin" or strRole == "Editor":
             if history_id:
-                queryset = self.get_queryset().filter(history_id=history_id)
-                serializer = specialHistorySerializer(queryset, many=True)
-                return Response(serializer.data)
+                return self.historyBack.historySearch(history_id, self.get_queryset())
             if start_date and end_date:
-                startingDate = self.dateConversion.dateFormattoYYMMDD(start_date)
-                endingDate = self.dateConversion.dateFormattoYYMMDD(end_date)
-
-                filteredData = HistoryTable.objects.filter(date_out__isnull=False).filter(
-                    date_out__range=(startingDate, endingDate + timedelta(days=1))).select_related('item_code__category').select_related(
-                    'email')
-                serializer = specialHistoryReportSerializer(filteredData, many=True)
-                return Response(serializer.data, status=status.HTTP_200_OK)
+                return self.historyBack.historySearchDateRange(start_date, end_date)
             if returnItems:
                 serializer = specialHistorySerializer(self.get_queryset().order_by('date_out').filter(date_out__isnull=True), many=True)
                 return Response(serializer.data)
@@ -496,117 +381,26 @@ class HistoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Upda
             return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
 
     def put(self, request, history_id=None, lost=None, returnItems=None):
-        strRole = self.getRole(request)
+        strRole = self.roleLookup.roleReturn(request)
         if strRole == "Admin" or strRole == "Editor":
             if history_id:
                 return self.update(request, history_id)
             if returnItems:
-                data = request.data
-                itemsReturned = 0
-                for eachData in data:
-                    try:
-                        today = timezone.now().today()
-                        selectedHistory = HistoryTable.objects.get(history_id=eachData['history_id'])
-                        if selectedHistory.date_out is None:
-                            note = None
-                            try:
-                                note = eachData['notes']
-                            except:
-                                pass
-                            selectedHistory.date_out = today
-                            selectedHistory.notes = note
-                            itemsReturned += 1
-                            selectedHistory.save()
-                    except:
-                        pass
-                return Response({'message': 'Items returned, items now Available',
-                                 'items returned': itemsReturned}
-                                , status=status.HTTP_200_OK)
+                return self.historyBack.returnItems(request)
             if lost:
-                data = request.data
-                itemLostcount = 0
-                for eachData in data:
-                    try:
-                        today = timezone.now().today()
-                        selectedHistory = HistoryTable.objects.get(history_id=eachData['history_id'])
-                        selectedHistory.notes = "Lost"
-                        selectedHistory.date_out = today
-
-                        selectedItem = InventoryTable.objects.get(item_code=selectedHistory.item_code.item_code)
-                        selectedItem.item_condition = "Lost"
-
-                        selectedItem.save()
-                        selectedHistory.save()
-                        itemLostcount += 1
-                    except:
-                        pass
-                return Response({'message': 'Item/s marked as lost, items now unavailble',
-                                 'items lost': itemLostcount}
-                                , status=status.HTTP_200_OK)
+                return self.historyBack.markItemasLost(request)
         else:
             return Response({'message': 'Unauthorized Access'}, status=status.HTTP_200_OK)
 
     def post(self, request):
-        strRole = self.getRole(request)
+        strRole = self.roleLookup.roleReturn(request)
         if strRole == "Editor" or strRole == "Admin":
-            data = request.data
-            count = 0
-            for eachData in data:
-                email = eachData['email']
-                if not email:
-                    email = request.session['email']
-                item_code = eachData['item_code']
-
-                date_in = None
-                try:
-                    date_in = eachData['date_in']
-                except:
-                    pass
-
-                date_out = None
-                try:
-                    date_out = eachData['date_out']
-                except:
-                    pass
-
-                due_date = None
-                try:
-                    due_date = eachData['due_date']
-                except:
-                    pass
-
-                notes = None
-                try:
-                    notes = eachData['notes']
-                except:
-                    pass
-                user = UserTable.objects.get(email=email)
-                item = InventoryTable.objects.get(item_code=item_code)
-
-                if self.performCheck(item_code):
-                    history = HistoryTable.objects.create(
-                        email=user,
-                        item_code=item,
-                        date_in=date_in,
-                        date_out=date_out,
-                        due_date=due_date,
-                        notes=notes
-                    )
-                    count += 1
-
-            return Response({'Inserted_data': count},status=status.HTTP_200_OK)
+            return self.historyBack.newBorrow(request)
         else:
             return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
 
-    def performCheck(self, item_code):
-        condition1 = InventoryTable.objects.filter(
-            ~Q(item_code__in=HistoryTable.objects.filter(date_out__isnull=True).values_list('item_code', flat=True))).filter(item_code=item_code).filter(status="Available").select_related('category')
-        condition2 = InventoryTable.objects.filter(status="Available").filter(item_code=item_code)
-        decision = condition1.exists() and condition2.exists()
-        return decision
-
     def delete(self, request, history_id=None, clearLogs=None):
-        strRole = self.getRole(request)
+        strRole = self.roleLookup.roleReturn(request)
         if strRole == "Editor":
             if history_id:
                 return self.destroy(request, history_id)
@@ -636,7 +430,7 @@ class reservationsClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins
 
 
     def get(self, request, reservation_id=None, emailSearch=None):
-        strRole = self.getRole(request)
+        strRole = self.roleLookup.roleReturn(request)
         if strRole == "Editor" or strRole == "Admin":
             if reservation_id:
                 queryset = self.get_queryset().filter(reservation_id=reservation_id)
@@ -653,14 +447,10 @@ class reservationsClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins
             return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
 
     def post(self, request):
-        serializer = specialInsertReservationSerializer(data=request.data, many=True)
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(request)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
+        return self.perform_create(request)
 
     def put(self, request, reservation_id=None):
-        strRole = self.getRole(request)
+        strRole = self.roleLookup.roleReturn(request)
         if strRole == "Editor" or strRole == "Admin":
             return self.update(request, reservation_id)
         else:
@@ -672,9 +462,14 @@ class reservationsClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins
     def perform_create(self, request):
         today = timezone.now().today()
         data = request.data
+        email = request.session['email']
+        insertedData = 0
         for eachData in data:
             item_code = eachData['item_code']
-            email = eachData['email']
+            try:
+                email = eachData['email']
+            except:
+                pass
             condition1 = InventoryTable.objects.filter(
                 ~Q(item_code__in=ReservationTable.objects.filter(date_of_expiration__gte=today).filter(claim=0).values_list(
                     'item_code', flat=True)) & ~Q(item_code__in=HistoryTable.objects.filter(date_out__isnull=True).values_list('item_code', flat=True))).filter(item_code=item_code).filter(status="Available").select_related('category')
@@ -688,26 +483,27 @@ class reservationsClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins
                     claim=0
                 )
                 reservation.save()
+                insertedData += 1
             else:
                 pass
-
-    def getRole(self, request):
-        try:
-            lookUpRole = self.roleLookup.roleReturn(request)
-            return lookUpRole
-        except:
-            return ""
+        if insertedData > 0:
+            return Response({'message': 'items reserved: ' + str(insertedData)}, status=status.HTTP_200_OK)
+        else:
+            return Response({'message': 'No item was reserved'}, status=status.HTTP_204_NO_CONTENT)
 
 #special classes
-class specificHistoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixins.RetrieveModelMixin, mixins.ListModelMixin):
+class specificHistoryClass(generics.GenericAPIView):
     permission_classes = [sessionCustomAuthentication]
     serializer_class = specificUserHistorySerializer
     queryset = HistoryTable.objects.all()
     roleLookup = roleClassify()
 
-    #Change to get request in production inform front end first before changing to
     def post(self, request):
-        email = request.session['email']
+        email = None
+        if settings.DEBUG is False:
+            email = request.session['email']
+        else:
+            email = request.data['email']
         serializer = specificUserHistorySerializer(self.get_queryset().order_by('date_out').filter(email=email).filter(date_out__isnull=False), many=True)
         return Response(serializer.data)
 
@@ -718,91 +514,33 @@ class specificHistoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mix
         except:
             return ""
 
-class specificReservationClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixins.RetrieveModelMixin, mixins.ListModelMixin):
+class specificReservationClass(generics.GenericAPIView):
     permission_classes = [sessionCustomAuthentication]
     serializer_class = specificUserReservationSerializer
     queryset = ReservationTable.objects.all()
     roleLookup = roleClassify()
 
-    #Change to get request in production
     def post(self, request):
         email = request.session['email']
         serializer = self.get_serializer(self.get_queryset().order_by('-date_of_expiration').filter(email=email), many=True)
         return Response(serializer.data)
 
-class specificUserreservationsClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixins.RetrieveModelMixin, mixins.ListModelMixin):
+class specificUserreservationsClass(generics.GenericAPIView):
     permission_classes = [sessionCustomAuthentication]
     serializer_class = ReservationSerializer
-    queryset = ReservationTable.objects.all()
+    reservationLogic = reservationLogic()
     roleLookup = roleClassify()
 
     def post(self, request):
-        data = request.data
-        email = request.session['email']
-        for eachData in data:
-            item_code = eachData['item_code']
-            user = UserTable.objects.get(email=email)
-            item = InventoryTable.objects.get(item_code=item_code)
-            if self.performCheck(item_code):
-                reserve = ReservationTable.objects.create(
-                    email=user,
-                    item_code=item,
-                    claim=0,
-                )
-                reserve.save()
-        return Response({'message':'items successfully reserved'}, status=status.HTTP_200_OK)
+        return self.reservationLogic.specificUserReservation(request)
 
-    def performCheck(self, item_code):
-        today = timezone.now().today()
-        condition1 = InventoryTable.objects.filter(
-            ~Q(item_code__in=ReservationTable.objects.filter(date_of_expiration__gte=today).filter(claim=0).values_list(
-                'item_code', flat=True)) & ~Q(item_code__in=HistoryTable.objects.filter(date_out__isnull=True).values_list('item_code',flat=True))).filter(
-            item_code=item_code).filter(status="Available").select_related('category')
-        condition2 = InventoryTable.objects.filter(status="Available").filter(item_code=item_code)
-        decision = condition1.exists() and condition2.exists()
-        return decision
-
-class reservationTransfer(generics.GenericAPIView, mixins.CreateModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin, mixins.RetrieveModelMixin, mixins.ListModelMixin):
+class reservationTransfer(generics.GenericAPIView):
     permission_classes = [sessionCustomAuthentication]
     serializer_class = specificUserHistorySerializer
-    queryset = HistoryTable.objects.all()
+    reserveLogic = reservationLogic()
     roleLookup = roleClassify()
 
     def post(self, request):
-        strRole = self.getRole(request)
+        strRole = self.roleLookup.roleReturn(request)
         if strRole == "Editor" or strRole == "Admin":
-            data = request.data
-            for eachData in data:
-                today = timezone.now().today()
-                today_str = today.strftime('%Y-%m-%d')
-
-                reservationId = eachData['reservation_id']
-                selectedReserve = ReservationTable.objects.filter(reservation_id=reservationId).filter(claim=False).filter(date_of_expiration__gte=today_str)
-                email = eachData['email']
-                item_code = eachData['item_code']
-                notes = ''
-                try:
-                    notes = eachData['notes']
-                except:
-                    pass
-
-                user = UserTable.objects.get(email=email)
-                item = InventoryTable.objects.get(item_code=item_code)
-
-                if user is not None and item is not None and selectedReserve is not None:
-                    history = HistoryTable.objects.create(
-                        email=user,
-                        item_code=item,
-                        notes=notes,
-                    )
-                    selectedReserve.claim = True
-                    selectedReserve.delete()
-                    history.save()
-            return Response(status=status.HTTP_200_OK)
-
-    def getRole(self, request):
-        try:
-            lookUpRole = self.roleLookup.roleReturn(request)
-            return lookUpRole
-        except:
-            return ""
+            return self.reserveLogic.transferReservetoBorrow(request)

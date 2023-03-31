@@ -2,7 +2,7 @@ from django.urls import path
 from .views import CategoryClass
 from .views import testFunction
 from .views import reservationsClass, InventoryClass, HistoryClass, LoginPoint, LogoutPoint, RoleClass, UsersClass
-from .views import viewItemsthatCanBeReserved, pendingReservation, updatePass, specificUserreservationsClass
+from .views import viewItemsthatCanBeReserved, pendingReservation, specificUserreservationsClass
 from .views import logoutAllUsers, clearAllreservations, countStatus, textPeople, specificReservationClass
 from .views import editorResetPass, editorChangePass, specificHistoryClass, reservationTransfer, updatePass
 urlpatterns = [

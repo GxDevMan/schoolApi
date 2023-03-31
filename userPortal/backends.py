@@ -1,7 +1,5 @@
-import os
 from datetime import date
 from django.contrib.auth.backends import BaseBackend
-from django.contrib.sessions.backends.db import SessionStore
 from userPortal.models import UserTable
 from django.contrib.auth.hashers import PBKDF2PasswordHasher
 from rest_framework.permissions import IsAuthenticated
@@ -12,8 +10,6 @@ class roleClassify():
         debug = settings.DEBUG
         if debug:
             return "Editor"
-        # sessionHeader = request.META.get('HTTP_SESSIONID')
-        # session = SessionStore(session_key=sessionHeader)
         role = request.session['role']
         return role
 
@@ -23,12 +19,9 @@ class sessionCustomAuthentication(IsAuthenticated):
             debug = settings.DEBUG
             if debug:
                 return True
-            # sessionHeader = request.META.get('HTTP_SESSIONID')
-            # session = SessionStore(session_key=sessionHeader)
             email = request.session['email']
             return True
         except:
-            print("failed")
             return False
 
 class userAuth(BaseBackend):
