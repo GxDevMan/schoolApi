@@ -28,6 +28,7 @@ urlpatterns = [
 
     path('inventory/<int:item_code>', InventoryClass.as_view()),
     path('inventory/<str:filter>', InventoryClass.as_view()),
+    path('inventory/categoryFilter/<int:categoryId>', InventoryClass.as_view()),
     path('inventory/', InventoryClass.as_view()),
     path('statuscount/', countStatus.as_view()),
 

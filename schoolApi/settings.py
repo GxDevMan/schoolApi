@@ -22,10 +22,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('SECRET_KEY')
+# SECRET_KEY = os.environ.get('SECRET_KEY')
+SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 #get your domain and put it here
 ALLOWED_HOSTS = ['*']
@@ -104,17 +105,34 @@ WSGI_APPLICATION = 'schoolApi.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
+#Production Code
+# DATABASES = {
+#     'default': {
+#         'OPTIONS': {
+#             'charset':'utf8mb4'
+#         },
+#         'ENGINE': 'django.db.backends.mysql',
+#         'NAME': os.environ.get('DB_SCHEMA'),
+#         'USER': os.environ.get('DB_USER'),
+#         'PASSWORD': os.environ.get('DB_PASSWORD'),
+#         'HOST': os.environ.get('DB_HOST'),
+#         'PORT': os.environ.get('DB_PORT'),
+#         'OPTIONS': {'charset': 'utf8mb4'},
+#     }
+# }
+
+
 DATABASES = {
     'default': {
         'OPTIONS': {
             'charset':'utf8mb4'
         },
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.environ.get('DB_SCHEMA'),
-        'USER': os.environ.get('DB_USER'),
-        'PASSWORD': os.environ.get('DB_PASSWORD'),
-        'HOST': os.environ.get('DB_HOST'),
-        'PORT': os.environ.get('DB_PORT'),
+        'NAME': os.getenv('DB_SCHEMA'),
+        'USER': os.getenv('DB_USER'),
+        'PASSWORD': os.getenv('DB_PASSWORD'),
+        'HOST': os.getenv('DB_HOST'),
+        'PORT': os.getenv('DB_PORT'),
         'OPTIONS': {'charset': 'utf8mb4'},
     }
 }

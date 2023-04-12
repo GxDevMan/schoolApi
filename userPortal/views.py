@@ -218,6 +218,8 @@ class InventoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Up
     lookup_url_kwarg = 'item_code'
     filter_lookup_field = 'filter'
     filter_lookup_url_kwarg = 'filter'
+    category_lookup_field = 'categoryId'
+    category_lookup_url_kwarg = 'categoryId'
     roleLookup = roleClassify()
     serializer_class = InventoryTableSerializer
 
@@ -228,13 +230,12 @@ class InventoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Up
         else:
             return Response({'message':'Unauthorized'}, status=status.HTTP_200_OK)
 
-    def get(self, request, item_code=None, filter=None):
+    def get(self, request, item_code=None, filter=None, categoryId=None):
         strRole = self.roleLookup.roleReturn(request)
         if strRole == "Editor" or strRole == "Admin":
             if item_code is not None:
                 queryset = self.get_queryset().filter(item_code=item_code)
                 serializer = specialInventorySerializer(queryset, many=True)
-
                 response = Response(serializer.data)
                 return response
 
@@ -243,6 +244,14 @@ class InventoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Up
                 serializer = specialInventorySerializer(queryset, many=True)
                 response = Response(serializer.data)
                 return response
+
+            if categoryId:
+                categoryObj = CategoryTable.objects.get(category_id=categoryId)
+                queryset = self.get_queryset().filter(category=categoryObj)
+                serializer = specialInventorySerializer(queryset, many=True)
+                response = Response(serializer.data)
+                return response
+
             else:
                 serializer = specialInventorySerializer(self.get_queryset(), many=True)
                 response = Response(serializer.data)
