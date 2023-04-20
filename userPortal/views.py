@@ -239,13 +239,20 @@ class InventoryClass(generics.GenericAPIView, mixins.CreateModelMixin, mixins.Up
                 response = Response(serializer.data)
                 return response
 
-            if filter is not None:
+            elif filter is not None and categoryId:
+                categoryObj = CategoryTable.objects.get(category_id=categoryId)
+                queryset = self.get_queryset().filter(item_condition=filter).filter(category=categoryObj)
+                serializer = specialInventorySerializer(queryset, many=True)
+                response = Response(serializer.data)
+                return response
+
+            elif filter is not None:
                 queryset = self.get_queryset().filter(item_condition=filter)
                 serializer = specialInventorySerializer(queryset, many=True)
                 response = Response(serializer.data)
                 return response
 
-            if categoryId:
+            elif categoryId:
                 categoryObj = CategoryTable.objects.get(category_id=categoryId)
                 queryset = self.get_queryset().filter(category=categoryObj)
                 serializer = specialInventorySerializer(queryset, many=True)
