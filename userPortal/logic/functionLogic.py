@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.contrib.auth import authenticate
+from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.contrib.sessions.models import Session
@@ -7,7 +8,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from django.db.models import Q
 from userPortal.backends import roleClassify
-from userPortal.models import ReservationTable, InventoryTable, HistoryTable, UserTable
+from userPortal.models import ReservationTable, InventoryTable, HistoryTable, UserTable, CategoryTable
 from userPortal.serializers import specialInventorySerializer, changePassSerializer, pendingReservationSerializer
 
 
@@ -15,14 +16,29 @@ def sessionTableClear():
     Session.objects.all().delete()
     return Response({'Message': 'All Users Logged out'}, status=status.HTTP_200_OK)
 
-def returnItemsviewReserve():
+def returnItemsviewReserve(categoryId):
     today = timezone.now().today()
-    query = InventoryTable.objects.filter(
-        ~Q(item_code__in=ReservationTable.objects.filter(date_of_expiration__gte=today).filter(claim=0).values_list(
-            'item_code', flat=True)) &
-        ~Q(item_code__in=HistoryTable.objects.filter(date_out__isnull=True).values_list('item_code',
-                                                                                        flat=True))).filter(
-        status="Available").select_related('category')
+    query = None
+    if categoryId:
+        try:
+            categoryObj = CategoryTable.objects.get(category_id=categoryId)
+            query = InventoryTable.objects.filter(
+                ~Q(item_code__in=ReservationTable.objects.filter(date_of_expiration__gte=today).filter(claim=0).values_list(
+                    'item_code', flat=True)) &
+                ~Q(item_code__in=HistoryTable.objects.filter(date_out__isnull=True).values_list('item_code',
+                                                                                                flat=True))).filter(
+                status="Available").filter(category=categoryObj).select_related('category')
+        except:
+            return Response({'error': 'category not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    else:
+        query = InventoryTable.objects.filter(
+            ~Q(item_code__in=ReservationTable.objects.filter(date_of_expiration__gte=today).filter(claim=0).values_list(
+                'item_code', flat=True)) &
+            ~Q(item_code__in=HistoryTable.objects.filter(date_out__isnull=True).values_list('item_code',
+                                                                                            flat=True))).filter(
+            status="Available").select_related('category')
+
     serializer = specialInventorySerializer(query, many=True)
     return Response(serializer.data)
 

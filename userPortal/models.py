@@ -47,7 +47,8 @@ class CategoryTable(models.Model):
         db_table = 'category_table'
 
     def __str__(self):
-        return self.category_name
+        formatString = "{categoryId} : {categoryName}"
+        return formatString.format(categoryId=self.category_id, categoryName=self.category_name)
 
 class InventoryTable(models.Model):
     item_code = models.AutoField(primary_key=True)

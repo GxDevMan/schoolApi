@@ -34,6 +34,7 @@ urlpatterns = [
     path('statuscount/', countStatus.as_view()),
 
     path('itemsView/', viewItemsthatCanBeReserved),
+    path('itemsView/categoryFilter/<int:categoryId>/', viewItemsthatCanBeReserved),
 
     path('user/<str:email>', UsersClass.as_view()),
     path('user/', UsersClass.as_view()),

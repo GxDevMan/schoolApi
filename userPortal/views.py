@@ -40,9 +40,9 @@ def clearAllreservations(request):
 
 @api_view(['GET'])
 @permission_classes([sessionCustomAuthentication])
-def viewItemsthatCanBeReserved(request):
+def viewItemsthatCanBeReserved(request, categoryId=None):
     if request.method == 'GET':
-        return functionLogic.returnItemsviewReserve()
+        return functionLogic.returnItemsviewReserve(categoryId)
 
 @api_view(['PUT'])
 @permission_classes([sessionCustomAuthentication])
