@@ -537,10 +537,11 @@ class specificReservationClass(generics.GenericAPIView):
     roleLookup = roleClassify()
 
     def post(self, request):
-        if settings.debug is False:
-            email = request.session['email']
-        else:
+        email = ""
+        if settings.DEBUG:
             email = request.data['email']
+        else:
+            email = request.session['email']
         serializer = self.get_serializer(self.get_queryset().order_by('-date_of_expiration').filter(email=email), many=True)
         return Response(serializer.data)
 
