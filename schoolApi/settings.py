@@ -22,16 +22,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-# SECRET_KEY = os.environ.get('SECRET_KEY')
-SECRET_KEY = os.getenv('SECRET_KEY')
+SECRET_KEY = os.environ.get('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
 #get your domain and put it here
-ALLOWED_HOSTS = ['*']
-CSRF_TRUSTED_ORIGINS = ['http://127.0.0.1:8080/', 'https://localhost:8080']
-CORS_ORIGIN_WHITELIST = ['https://localhost:8080',]
+ALLOWED_HOSTS = [os.environ.get('DOMAINURL')]
+CSRF_TRUSTED_ORIGINS = [os.environ.get('DOMAINURL')]
+CORS_ORIGIN_WHITELIST = [os.environ.get('DOMAINURL'),]
 TIME_ZONE = 'Asia/Manila'
 # Application definition
 INSTALLED_APPS = [
@@ -74,7 +73,6 @@ REST_FRAMEWORK = {
 }
 
 #Will be set to whitelist once a domain is set
-CORS_ORIGIN_ALLOW_ALL = True
 TIMEOUT = 3
 STATIC_URL = '/api/static/'
 STATIC_ROOT = '/api/static/'
@@ -120,22 +118,6 @@ DATABASES = {
         'OPTIONS': {'charset': 'utf8mb4'},
     }
 }
-
-
-# DATABASES = {
-#     'default': {
-#         'OPTIONS': {
-#             'charset':'utf8mb4'
-#         },
-#         'ENGINE': 'django.db.backends.mysql',
-#         'NAME': os.getenv('DB_SCHEMA'),
-#         'USER': os.getenv('DB_USER'),
-#         'PASSWORD': os.getenv('DB_PASSWORD'),
-#         'HOST': os.getenv('DB_HOST'),
-#         'PORT': os.getenv('DB_PORT'),
-#         'OPTIONS': {'charset': 'utf8mb4'},
-#     }
-# }
 
 PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.PBKDF2PasswordHasher',
